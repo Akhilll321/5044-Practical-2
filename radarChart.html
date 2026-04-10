@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+ <html>
+    <head>
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+        <style>
+            body {
+                font-family: sans-serif;
+                font-size: 18px;
+		    }
+
+        </style>
+    </head>
+
+    <body>
+        <h2>Radar Chart</h2>
+
+        <script>
+
+            // ADD REAL DATA HERE /////////
+
+            let data = [];
+            let features = ["A", "B", "C", "D", "E", "F"];
+            // Generate data
+            for (var i = 0; i < 3; i++){
+                var point = {}
+                //each feature will be a random number from 1-9
+                features.forEach(f => point[f] = Math.random() * 10);
+                data.push(point);
+            }
+
+            ///////////////////////////////////
+
+
+            // Responsive svg view
+            let width = 600;
+            let height = 600;
+            let svg = d3.select("body")
+                .append("svg")
+                .attr("width", "30%") 
+                .attr("height", "30%")
+                .attr("viewBox", "0 0 600 600")
+                .style("min-width", "350px") 
+                .style("min-height", "350px");
+
+            // Plot the grid lines
+            let radialScale = d3.scaleLinear()
+                .domain([0, 10])
+                .range([0, 250]);
+            let ticks = [2, 4, 6, 8, 10];
+
+            // Add circle
+            svg.selectAll("circle")
+                .data(ticks)
+                .join(
+                    enter => enter.append("circle")
+                        .attr("cx", width / 2)
+                        .attr("cy", height / 2)
+                        .attr("fill", "gray")
+                        // Darker radar circles closer to the centre
+                        .attr("fill-opacity", 0.1) 
+                        .attr("stroke", "gray")
+                        .attr("r", d => radialScale(d))
+                );
+            
+            // Add tick labels
+            svg.selectAll(".ticklabel")
+                .data(ticks)
+                .join(
+                    enter => enter.append("text")
+                        .attr("class", "ticklabel")
+                        .attr("x", width / 2 + 5)
+                        .attr("y", d => height / 2 - radialScale(d))
+                        .text(d => (d * 10) + "%")
+                );
+            
+            // Plot the axes 
+            function angleToCoordinate(angle, value){
+                let x = Math.cos(angle) * radialScale(value);
+                let y = Math.sin(angle) * radialScale(value);
+                return {"x": width / 2 + x, "y": height / 2 - y};
+            }
+
+            let featureData = features.map((f, i) => {
+                let angle = (Math.PI / 2) + (2 * Math.PI * i / features.length);
+                return {
+                    "name": f,
+                    "angle": angle,
+                    "line_coord": angleToCoordinate(angle, 10),
+                    "label_coord": angleToCoordinate(angle, 11.5)
+                };
+            });
+
+            // draw axis line
+            svg.selectAll("line")
+                .data(featureData)
+                .join(
+                    enter => enter.append("line")
+                        .attr("x1", width / 2)
+                        .attr("y1", height / 2)
+                        .attr("x2", d => d.line_coord.x)
+                        .attr("y2", d => d.line_coord.y)
+                        .attr("stroke","black")
+                );
+
+            // draw axis label
+            svg.selectAll(".axislabel")
+                .data(featureData)
+                .join(
+                    enter => enter.append("text")
+                        .attr("x", d => d.label_coord.x)
+                        .attr("y", d => d.label_coord.y)
+                        .text(d => d.name)
+                );
+            let line = d3.line()
+                .x(d => d.x)
+                .y(d => d.y)
+                .curve(d3.curveCardinalClosed);
+            let colors = ["orange", "red", "darkblue"];
+
+            function getPathCoordinates(data_point){
+                let coordinates = [];
+                for (var i = 0; i < features.length; i++){
+                    let ft_name = features[i];
+                    let angle = (Math.PI / 2) + (2 * Math.PI * i / features.length);
+                    coordinates.push(angleToCoordinate(angle, data_point[ft_name]));
+                }
+                return coordinates;
+            }
+
+            // draw the path element
+            svg.selectAll("path")
+                .data(data)
+                .join(
+                    enter => enter.append("path")
+                        .datum(d => getPathCoordinates(d))
+                        .attr("d", line)
+                        .attr("stroke-width", 2)
+                        .attr("stroke", (_, i) => colors[i])
+                        .attr("fill", (_, i) => colors[i])
+                        .attr("stroke-opacity", 1)
+                        .attr("fill-opacity", 0.3)
+                );
+
+            // draw points on the lines
+            data.forEach((point, i) => {
+                getPathCoordinates(point).forEach(coord => {
+                    svg.append("circle")
+                        .attr("cx", coord.x)
+                        .attr("cy", coord.y)
+                        .attr("r", 5)
+                        .attr("fill", colors[i])
+                });
+            });
+
+    </script>
+</html>
