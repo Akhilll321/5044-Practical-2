@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+	<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+	<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+
+	<style>
+		:root {
+			--bg: #fafafa;
+			--ink: #222;
+			--muted: #666;
+			--panel: #fff;
+		}
+
+		html, body {
+			margin: 0;
+			padding: 0;
+			font-family: -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
+			background: var(--bg);
+			color: var(--ink);
+		}
+
+		header { padding: 16px 24px 8px 24px; }
+		header h1 { margin: 0 0 4px 0; font-size: 20px; }
+		header p  { margin: 0; color: var(--muted); font-size: 13px; max-width: 900px; }
+
+		.controls {
+			display: flex;
+			gap: 24px;
+			align-items: center;
+			padding: 10px 24px;
+			background: var(--panel);
+			border-top: 1px solid #eee;
+			border-bottom: 1px solid #eee;
+			flex-wrap: wrap;
+		}
+		.controls fieldset {
+			border: 1px solid #ddd;
+			border-radius: 6px;
+			padding: 6px 12px;
+			margin: 0;
+		}
+		.controls legend {
+			font-size: 11px;
+			color: var(--muted);
+			text-transform: uppercase;
+			letter-spacing: .5px;
+			padding: 0 4px;
+		}
+		.controls label { font-size: 13px; margin-right: 10px; cursor: pointer; }
+		.controls input[type=radio] { vertical-align: middle; margin-right: 3px; }
+
+		#reset-btn {
+			background: #eee;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+			padding: 4px 10px;
+			font-size: 12px;
+			cursor: pointer;
+		}
+		#reset-btn:hover { background: #e0e0e0; }
+
+		#map-wrap {
+			position: relative;
+			width: 100%;
+			height: calc(100vh - 150px);
+			min-height: 520px;
+		}
+		svg#map {
+			width: 100%;
+			height: 100%;
+			display: block;
+			background: #eaf2f7;
+		}
+
+		.country {
+			stroke: #fff;
+			stroke-width: .4px;
+			cursor: pointer;
+			transition: stroke-width .1s, stroke .1s;
+		}
+		.country:hover    { stroke: #111; stroke-width: 1.2px; }
+		.country.selected { stroke: #ff9800; stroke-width: 2.4px; }
+
+		.bubble { fill: #222; fill-opacity: .12; stroke: #222; stroke-opacity: .55; stroke-width: .6px; pointer-events: none; }
+		.person { fill: #1a1a1a; fill-opacity: .38; pointer-events: none; }
+
+		.tooltip {
+			position: absolute;
+			pointer-events: none;
+			background: rgba(255, 255, 255, .97);
+			border: 1px solid #bbb;
+			border-radius: 6px;
+			padding: 8px 10px;
+			font-size: 12px;
+			box-shadow: 0 4px 14px rgba(0, 0, 0, .12);
+			max-width: 260px;
+			line-height: 1.35;
+			transition: opacity .1s;
+		}
+		.tooltip h4 { margin: 0 0 4px 0; font-size: 13px; }
+		.tooltip .row { display: flex; justify-content: space-between; gap: 12px; }
+		.tooltip .row span:last-child { font-variant-numeric: tabular-nums; }
+
+		.legend {
+			position: absolute;
+			left: 16px;
+			bottom: 16px;
+			background: rgba(255, 255, 255, .94);
+			border: 1px solid #ddd;
+			border-radius: 6px;
+			padding: 10px 12px;
+			font-size: 11px;
+		}
+		.legend h5 {
+			margin: 0 0 6px 0;
+			font-size: 11px;
+			text-transform: uppercase;
+			letter-spacing: .4px;
+			color: var(--muted);
+		}
+		.legend .color-bar { display: flex; height: 12px; width: 220px; margin-bottom: 4px; border-radius: 2px; overflow: hidden; }
+		.legend .color-bar div { flex: 1; }
+		.legend .ticks { display: flex; justify-content: space-between; width: 220px; color: var(--muted); font-variant-numeric: tabular-nums; }
+		.legend-size { margin-top: 10px; display: flex; align-items: flex-end; gap: 10px; }
+		.legend-size svg { overflow: visible; }
+		.legend-size text { font-size: 10px; fill: var(--muted); }
+	</style>
+
+	<title>Breastfeeding Map View</title>
+</head>
+
+<body>
+	<header>
+		<h1>RQ?</h1>
+		<p>Each country is shaded by the share of children aged 12&ndash;23 months who are still being breastfed.
+		   Pictograms on top of each country represent its under-5 population (1 icon = N people). Use the filter
+		   to compare the <b>poorest 20%</b> and <b>richest 20%</b> wealth quintiles, or switch to the
+		   <b>Gap</b> view to see inequality directly. Click a country to [see other two views].</p>
+	</header>
+
+	<div class="controls">
+		<fieldset>
+			<legend>Continued breastfeeding (12&ndash;23m) &mdash; colour</legend>
+			<label><input type="radio" name="quintile" value="continued_all" checked> All children</label>
+			<label><input type="radio" name="quintile" value="continued_poorest"> Poorest 20%</label>
+			<label><input type="radio" name="quintile" value="continued_richest"> Richest 20%</label>
+			<label><input type="radio" name="quintile" value="gap"> Gap (Rich &minus; Poor)</label>
+		</fieldset>
+		<fieldset>
+			<legend>Population metric</legend>
+			<label><input type="radio" name="size" value="pop_u5" checked> Under-5</label>
+			<label><input type="radio" name="size" value="pop_total"> Total</label>
+			<label><input type="radio" name="size" value="deficit"> Not-cont. BF</label>
+		</fieldset>
+		<fieldset>
+			<legend>Display style</legend>
+			<label><input type="radio" name="style" value="pictogram" checked> Pictogram</label>
+			<label><input type="radio" name="style" value="bubble"> Bubble</label>
+			<label><input type="radio" name="style" value="none"> None</label>
+		</fieldset>
+		<fieldset id="unit-fs">
+			<legend>Icon unit (people per figure)</legend>
+			<select id="unit-select">
+				<option value="100000">1 = 100 k</option>
+				<option value="200000" selected>1 = 200 k</option>
+				<option value="500000">1 = 500 k</option>
+				<option value="1000000">1 = 1 M</option>
+				<option value="2000000">1 = 2 M</option>
+			</select>
+		</fieldset>
+		<button id="reset-btn" title="Clear selection and reset zoom">Reset</button>
+		<span id="selected-label" style="font-size:12px;color:var(--muted);"></span>
+	</div>
+
+	
+	<div id="map-wrap">
+		<svg id="map">
+			<defs>
+				<symbol id="person" viewBox="0 0 6 10" overflow="visible">
+					<circle cx="3" cy="1.6" r="1.35" />
+					<path d="M 1.4 3.5 Q 1.4 3.1 2 3.1 L 4 3.1 Q 4.6 3.1 4.6 3.5
+					         L 4.6 6.2 L 3.8 6.2 L 3.8 9.6 L 2.2 9.6 L 2.2 6.2 L 1.4 6.2 Z" />
+				</symbol>
+			</defs>
+		</svg>
+		<div class="tooltip" id="tooltip" style="opacity:0;"></div>
+		<div class="legend" id="legend"></div>
+	</div>
+
+	<script>
+		// choropleth of continued BF 12-23m + pictogram of under-5 pop
+		(async () => {
+
+			// state
+			const ICON_CAP   = 5500;
+			let currentMetric = "continued_all";
+			let currentSize   = "pop_u5";
+			let currentStyle  = "pictogram";
+			let iconUnit      = 200000;
+			let selectedName  = null;
+			const pictoCache  = new Map();
+
+			// svg setup
+			const svg       = d3.select("#map");
+			const tooltip   = d3.select("#tooltip");
+			const legendDiv = d3.select("#legend");
+			let W = svg.node().clientWidth;
+			let H = svg.node().clientHeight;
+
+			const projection = d3.geoNaturalEarth1();
+			const path       = d3.geoPath(projection);
+
+			const gRoot       = svg.append("g");
+			const gCountries  = gRoot.append("g").attr("class", "countries-layer");
+			const gPictograms = gRoot.append("g").attr("class", "pictograms-layer");
+			const gBubbles    = gRoot.append("g").attr("class", "bubbles-layer");
+
+			const zoom = d3.zoom().scaleExtent([1, 8]).on("zoom", (e) => {
+				gRoot.attr("transform", e.transform);
+				gCountries.selectAll("path").attr("stroke-width", 0.4 / e.transform.k);
+			});
+			svg.call(zoom);
+
+			// map SOWC names to world-atlas names
+			const nameOverrides = {
+				"United States": "United States of America",
+				"Russian Federation": "Russia",
+				"Korea, Republic of": "South Korea",
+				"Republic of Korea": "South Korea",
+				"Democratic People's Republic of Korea": "North Korea",
+				"Korea, Democratic People's Republic of": "North Korea",
+				"Viet Nam": "Vietnam",
+				"Lao People's Democratic Republic": "Laos",
+				"Syrian Arab Republic": "Syria",
+				"Iran (Islamic Republic of)": "Iran",
+				"Iran, Islamic Republic of": "Iran",
+				"Bolivia (Plurinational State of)": "Bolivia",
+				"Venezuela (Bolivarian Republic of)": "Venezuela",
+				"Tanzania, United Republic of": "Tanzania",
+				"United Republic of Tanzania": "Tanzania",
+				"Congo": "Republic of the Congo",
+				"Democratic Republic of the Congo": "Dem. Rep. Congo",
+				"Côte d'Ivoire": "Côte d'Ivoire",
+				"Cote d'Ivoire": "Côte d'Ivoire",
+				"Czechia": "Czech Republic",
+				"Republic of Moldova": "Moldova",
+				"Moldova, Republic of": "Moldova",
+				"North Macedonia": "Macedonia",
+				"State of Palestine": "Palestine",
+				"Eswatini": "eSwatini",
+				"Türkiye": "Turkey",
+				"Turkiye": "Turkey",
+				"Bahamas": "The Bahamas",
+				"Gambia": "The Gambia",
+				"Brunei Darussalam": "Brunei",
+				"Micronesia (Federated States of)": "Federated States of Micronesia",
+				"Cabo Verde": "Cape Verde",
+				"Timor-Leste": "East Timor"
+			};
+			const normalize = (n) => nameOverrides[n] || n;
+
+			// load data
+			// T1 cols 0=country 1=pop_total 5=pop_u5
+			// T9 cols 0 1 3 7 9 11
+			const parseNum = (v) => {
+				if (v == null) return null;
+				const s = String(v).replace(/,/g, "").trim();
+				if (s === "" || s === "-") return null;
+				const n = +s;
+				return isNaN(n) ? null : n;
+			};
+
+			// skip first 6 header rows and stop at SUMMARY row
+			const loadSowcCsv = async (url) => {
+				const txt  = await d3.text(url);
+				const rows = d3.csvParseRows(txt);
+				const out  = [];
+				for (let i = 6; i < rows.length; i++) {
+					const name = (rows[i][0] || "").trim();
+					if (!name) continue;
+					if (/^SUMMARY$/i.test(name)) break;
+					out.push(rows[i]);
+				}
+				return out;
+			};
+
+			const [world, t1Rows, t9Rows] = await Promise.all([
+				d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"),
+				loadSowcCsv("data/1-Demographics-SOWC2025-1.csv"),
+				loadSowcCsv("data/9-Nutrition-breastfeeding-diets-SOWC2025-1.csv")
+			]);
+
+			const t1Map = new Map();
+			t1Rows.forEach((r) => {
+				t1Map.set(r[0].trim(), {
+					pop_total: parseNum(r[1]),
+					pop_u5:    parseNum(r[5])
+				});
+			});
+
+			const sowc = t9Rows.map((r) => {
+				const key = r[0].trim();
+				const pop = t1Map.get(key) || {};
+				return {
+					country:           key,
+					pop_total:         pop.pop_total ?? null,
+					pop_u5:            pop.pop_u5    ?? null,
+					early_initiation:  parseNum(r[1]),
+					exclusive_u6m:     parseNum(r[3]),
+					continued_all:     parseNum(r[7]),
+					continued_poorest: parseNum(r[9]),
+					continued_richest: parseNum(r[11])
+				};
+			});
+
+			const byName = new Map(sowc.map(d => [normalize(d.country), d]));
+			const countriesGeo = topojson.feature(world, world.objects.countries).features;
+
+			projection.fitSize([W, H * 0.95], { type: "Sphere" });
+
+			// colour scale domain from all BF values
+			const bfAllVals = sowc
+				.flatMap(d => [d.continued_all, d.continued_poorest, d.continued_richest])
+				.filter(v => v != null);
+			const bfMin = Math.floor(d3.min(bfAllVals) / 5) * 5;
+			const bfMax = Math.ceil (d3.max(bfAllVals) / 5) * 5;
+
+			let colorScale;
+			const rebuildColorScale = () => {
+				if (currentMetric === "gap") {
+					// diverging PuOr for gap view
+					// orange = richer BF more, purple = poorer BF more
+					const gapVals = sowc
+						.map(d => (d.continued_richest != null && d.continued_poorest != null)
+							? d.continued_richest - d.continued_poorest : null)
+						.filter(v => v != null);
+					const m = d3.max(gapVals.map(Math.abs)) || 40;
+					colorScale = d3.scaleDiverging(t => d3.interpolatePuOr(1 - t))
+						.domain([-m, 0, m]);
+				} else {
+					// sequential blues, clamp low end so pale values stay visible
+					colorScale = d3.scaleSequential(t => d3.interpolateBlues(0.22 + 0.76 * t))
+						.domain([bfMin, bfMax]);
+				}
+			};
+
+			// accessors
+			const metricValue = (rec) => {
+				if (!rec) return null;
+				if (currentMetric === "gap") {
+					const p = rec.continued_poorest, r = rec.continued_richest;
+					return (p == null || r == null) ? null : r - p;
+				}
+				return rec[currentMetric];
+			};
+
+			const sizeValue = (rec) => {
+				if (!rec) return 0;
+				if (currentSize === "deficit") {
+					if (rec.pop_u5 == null || rec.continued_all == null) return 0;
+					return rec.pop_u5 * (1 - rec.continued_all / 100);
+				}
+				return rec[currentSize] || 0;
+			};
+
+			let sizeScale;
+			const rebuildSizeScale = () => {
+				const vals = sowc.map(sizeValue).filter(v => v > 0);
+				sizeScale = d3.scaleSqrt().domain([0, d3.max(vals)]).range([0, 36]);
+			};
+
+			// render
+			const draw = () => {
+				drawChoropleth();
+				drawPopulation();
+				gCountries.selectAll("path.country")
+					.classed("selected", d => d.properties.name === selectedName);
+			};
+
+			// draw country paths
+			// use style not attr so CSS cannot override fill
+			const drawChoropleth = () => {
+				gCountries.selectAll("path.country")
+					.data(countriesGeo, d => d.id)
+					.join(
+						enter => enter.append("path")
+							.attr("class", "country")
+							.attr("d", path)
+							.on("mousemove", (e, d) => showTooltip(e, d))
+							.on("mouseleave", () => hideTooltip())
+							.on("click", (e, d) => toggleSelect(d))
+					)
+					.style("fill", d => {
+						const v = metricValue(byName.get(d.properties.name));
+						return v == null ? "#e6e6e6" : colorScale(v);
+					});
+			};
+
+			// draw population layer
+			// only touched when size or style changes, not on wealth filter
+			const drawPopulation = () => {
+				if (currentStyle === "bubble") {
+					gPictograms.selectAll("*").remove();
+					drawBubbles();
+				} else if (currentStyle === "pictogram") {
+					gBubbles.selectAll("*").remove();
+					drawPictograms();
+				} else {
+					gBubbles.selectAll("*").remove();
+					gPictograms.selectAll("*").remove();
+				}
+			};
+
+			const drawBubbles = () => {
+				const centers = countriesGeo.map(d => {
+					const rec = byName.get(d.properties.name);
+					const size = sizeValue(rec);
+					if (!size) return null;
+					const c = path.centroid(d);
+					if (isNaN(c[0])) return null;
+					return { x: c[0], y: c[1], r: sizeScale(size), rec };
+				}).filter(Boolean).sort((a, b) => b.r - a.r);
+
+				gBubbles.selectAll("circle.bubble")
+					.data(centers, d => d.rec.country)
+					.join(
+						enter => enter.append("circle").attr("class", "bubble")
+							.attr("cx", d => d.x).attr("cy", d => d.y).attr("r", 0)
+							.call(s => s.transition().duration(400).attr("r", d => d.r)),
+						update => update.call(s => s.transition().duration(400)
+							.attr("cx", d => d.x).attr("cy", d => d.y).attr("r", d => d.r)),
+						exit => exit.remove()
+					);
+			};
+
+			// draw pictograms
+			// cached by size and unit, wealth filter not in key
+			const drawPictograms = () => {
+				const cacheKey = currentSize + "|" + iconUnit;
+				let points = pictoCache.get(cacheKey);
+
+				if (!points) {
+					const raw = countriesGeo.map(feat => {
+						const rec = byName.get(feat.properties.name);
+						const pop = sizeValue(rec);
+						if (!pop) return null;
+						// SOWC pop columns are in thousands
+						const n = Math.max(1, Math.round(pop * 1000 / iconUnit));
+						return { feat, rec, n };
+					}).filter(Boolean);
+
+					// global icon cap for performance
+					let total = d3.sum(raw, r => r.n);
+					if (total > ICON_CAP) {
+						const f = ICON_CAP / total;
+						raw.forEach(r => r.n = Math.max(1, Math.round(r.n * f)));
+					}
+
+					points = [];
+					raw.forEach(({ feat, rec, n }) => {
+						samplePointsIn(feat, n).forEach(([x, y]) =>
+							points.push({ x, y, country: rec.country }));
+					});
+					pictoCache.set(cacheKey, points);
+				}
+
+				const iconSize = 6;
+				gPictograms.selectAll("use.person")
+					.data(points, (d, i) => d.country + "_" + i)
+					.join(
+						enter => enter.append("use")
+							.attr("class", "person")
+							.attr("href", "#person")
+							.attr("width", iconSize * 0.6)
+							.attr("height", iconSize)
+							.attr("x", d => d.x - iconSize * 0.3)
+							.attr("y", d => d.y - iconSize * 0.75)
+							.style("opacity", 0)
+							.call(s => s.transition().duration(350).style("opacity", 1)),
+						update => update
+							.attr("x", d => d.x - iconSize * 0.3)
+							.attr("y", d => d.y - iconSize * 0.75),
+						exit => exit.remove()
+					);
+			};
+
+			// sample random points inside a country polygon
+			const samplePointsIn = (feature, n) => {
+				const pts = [];
+
+				// tiny grid for very small countries
+				if (n <= 4) {
+					const [cx, cy] = path.centroid(feature);
+					if (!isFinite(cx)) return pts;
+					const step = 7, cols = Math.min(n, 2), rows = Math.ceil(n / cols);
+					let k = 0;
+					for (let r = 0; r < rows && k < n; r++) {
+						for (let c = 0; c < cols && k < n; c++) {
+							pts.push([
+								cx + (c - (cols - 1) / 2) * step,
+								cy + (r - (rows - 1) / 2) * step
+							]);
+							k++;
+						}
+					}
+					return pts;
+				}
+
+				const [[lon0, lat0], [lon1, lat1]] = d3.geoBounds(feature);
+				const dLon = lon1 - lon0, dLat = lat1 - lat0;
+				const maxTries = Math.max(200, n * 40);
+				let tries = 0;
+				while (pts.length < n && tries < maxTries) {
+					const lon = lon0 + Math.random() * dLon;
+					const lat = lat0 + Math.random() * dLat;
+					if (d3.geoContains(feature, [lon, lat])) {
+						const p = projection([lon, lat]);
+						if (p && isFinite(p[0])) pts.push(p);
+					}
+					tries++;
+				}
+				// fallback for sparse bbox hits like island countries
+				if (pts.length < n) {
+					const [cx, cy] = path.centroid(feature);
+					if (isFinite(cx)) {
+						while (pts.length < n) {
+							pts.push([cx + (Math.random() - .5) * 8, cy + (Math.random() - .5) * 8]);
+						}
+					}
+				}
+				return pts;
+			};
+
+			// tooltip
+			const showTooltip = (e, d) => {
+				const rec = byName.get(d.properties.name);
+				const gap = (rec && rec.continued_richest != null && rec.continued_poorest != null)
+					? rec.continued_richest - rec.continued_poorest : null;
+				const rows = [
+					["Continued BF (All)",         rec?.continued_all],
+					["Continued BF (Poorest 20%)", rec?.continued_poorest],
+					["Continued BF (Richest 20%)", rec?.continued_richest],
+					["Gap (Rich − Poor)",          gap],
+					["Early initiation %",         rec?.early_initiation],
+					["Exclusive BF <6m %",         rec?.exclusive_u6m],
+					["Total pop (k)",              rec?.pop_total],
+					["Under-5 pop (k)",            rec?.pop_u5]
+				];
+				const fmt = v => v == null ? '<span style="color:#aaa">—</span>' :
+					(typeof v === "number" ? v.toLocaleString(undefined, { maximumFractionDigits: 1 }) : v);
+				tooltip.html(
+					`<h4>${d.properties.name}</h4>` +
+					rows.map(([k, v]) => `<div class="row"><span>${k}</span><span>${fmt(v)}</span></div>`).join("")
+				)
+					.style("opacity", 1)
+					.style("left", (e.pageX + 14) + "px")
+					.style("top",  (e.pageY + 14) + "px");
+			};
+			const hideTooltip = () => tooltip.style("opacity", 0);
+
+			// selection
+			// broadcast countrySelected event for radar and bar views
+			const toggleSelect = (feat) => {
+				const name = feat.properties.name;
+				selectedName = (selectedName === name) ? null : name;
+				gCountries.selectAll("path.country")
+					.classed("selected", d => d.properties.name === selectedName);
+				d3.select("#selected-label").text(selectedName ? "Selected: " + selectedName : "");
+				window.dispatchEvent(new CustomEvent("countrySelected", {
+					detail: {
+						country: selectedName,
+						data: selectedName ? byName.get(selectedName) : null
+					}
+				}));
+			};
+
+			// legend
+			const drawLegend = () => {
+				legendDiv.html("");
+
+				// colour legend
+				if (currentMetric === "gap") {
+					const m = colorScale.domain()[2];
+					legendDiv.append("h5").text("Gap: Richest − Poorest (pct. pts)");
+					const bar = legendDiv.append("div").attr("class", "color-bar");
+					const N = 24;
+					for (let i = 0; i < N; i++) {
+						const t = -m + 2 * m * (i / (N - 1));
+						bar.append("div").style("background", colorScale(t));
+					}
+					const ticks = legendDiv.append("div").attr("class", "ticks");
+					ticks.append("span").text("−" + m.toFixed(0));
+					ticks.append("span").text("0");
+					ticks.append("span").text("+" + m.toFixed(0));
+					legendDiv.append("div")
+						.style("font-size", "10px").style("color", "var(--muted)").style("margin-top", "2px")
+						.html("purple = poorer breastfeed more &middot; orange = richer breastfeed more");
+				} else {
+					const label = {
+						continued_all: "All children",
+						continued_poorest: "Poorest 20%",
+						continued_richest: "Richest 20%"
+					}[currentMetric];
+					legendDiv.append("h5").text(`Continued BF 12–23m (%) — ${label}`);
+					const bar = legendDiv.append("div").attr("class", "color-bar");
+					const N = 24;
+					for (let i = 0; i < N; i++) {
+						bar.append("div").style("background",
+							colorScale(bfMin + (bfMax - bfMin) * (i / (N - 1))));
+					}
+					const ticks = legendDiv.append("div").attr("class", "ticks");
+					ticks.append("span").text(bfMin + "%");
+					ticks.append("span").text(((bfMin + bfMax) / 2).toFixed(0) + "%");
+					ticks.append("span").text(bfMax + "%");
+				}
+
+				// population legend
+				if (currentStyle === "pictogram") {
+					const fmt = d3.format(".2s");
+					const wrap = legendDiv.append("div").style("margin-top", "10px");
+					wrap.append("div")
+						.style("font-size", "11px")
+						.style("text-transform", "uppercase")
+						.style("letter-spacing", ".4px")
+						.style("color", "var(--muted)")
+						.text("Population");
+					const row = wrap.append("div")
+						.style("display", "flex")
+						.style("align-items", "center")
+						.style("gap", "6px")
+						.style("margin-top", "4px");
+					row.append("svg").attr("width", 10).attr("height", 14)
+						.append("use").attr("href", "#person")
+						.attr("width", 6).attr("height", 10).attr("x", 2).attr("y", 2)
+						.style("fill", "#1a1a1a").style("fill-opacity", .38);
+					row.append("span").style("font-size", "11px")
+						.text("= " + fmt(iconUnit).replace("G", "B") + " people");
+					const labelMap = {
+						pop_u5: "Under-5 population",
+						pop_total: "Total population",
+						deficit: "Children NOT continuing BF"
+					};
+					wrap.append("div").style("font-size", "10px").style("color", "var(--muted)")
+						.text(labelMap[currentSize]);
+				} else if (currentStyle === "bubble") {
+					const vals = sowc.map(sizeValue).filter(v => v > 0);
+					const maxV = d3.max(vals);
+					const ref = [maxV, maxV / 4, maxV / 16];
+					const wrap = legendDiv.append("div").attr("class", "legend-size");
+					const svgL = wrap.append("svg").attr("width", 100).attr("height", 60);
+					const maxR = sizeScale(maxV);
+					ref.forEach(v => {
+						const r = sizeScale(v);
+						svgL.append("circle")
+							.attr("cx", maxR + 2).attr("cy", 58 - r)
+							.attr("r", r).attr("fill", "none").attr("stroke", "#444");
+						svgL.append("text")
+							.attr("x", maxR * 2 + 8).attr("y", 60 - 2 * r + 3)
+							.text(d3.format(".2s")(v * 1000).replace("G", "B"));
+					});
+					const labelMap = {
+						pop_u5: "Under-5 population (k)",
+						pop_total: "Total population (k)",
+						deficit: "Children NOT continuing BF (k)"
+					};
+					wrap.append("div").style("font-size", "10px").style("color", "var(--muted)")
+						.text(labelMap[currentSize]);
+				}
+			};
+
+			// init
+			rebuildColorScale();
+			rebuildSizeScale();
+			draw();
+			drawLegend();
+
+			// controls
+			// each handler only redraws the layer it affects
+			d3.selectAll('input[name="quintile"]').on("change", function () {
+				currentMetric = this.value;
+				rebuildColorScale();
+				drawChoropleth();
+				drawLegend();
+			});
+
+			d3.selectAll('input[name="size"]').on("change", function () {
+				currentSize = this.value;
+				rebuildSizeScale();
+				drawPopulation();
+				drawLegend();
+			});
+
+			d3.selectAll('input[name="style"]').on("change", function () {
+				currentStyle = this.value;
+				d3.select("#unit-fs").style("display", currentStyle === "pictogram" ? null : "none");
+				drawPopulation();
+				drawLegend();
+			});
+
+			d3.select("#unit-select").on("change", function () {
+				iconUnit = +this.value;
+				if (currentStyle === "pictogram") { drawPopulation(); drawLegend(); }
+			});
+
+			d3.select("#reset-btn").on("click", () => {
+				selectedName = null;
+				d3.select("#selected-label").text("");
+				gCountries.selectAll("path.country").classed("selected", false);
+				svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
+				window.dispatchEvent(new CustomEvent("countrySelected",
+					{ detail: { country: null, data: null } }));
+			});
+
+			// resize
+			// clear picto cache since points are in screen space
+			window.addEventListener("resize", () => {
+				W = svg.node().clientWidth;
+				H = svg.node().clientHeight;
+				projection.fitSize([W, H * 0.95], { type: "Sphere" });
+				gCountries.selectAll("path.country").attr("d", path);
+				pictoCache.clear();
+				draw();
+			});
+
+		})();
+	</script>
+</body>
+
+</html>
