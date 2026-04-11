@@ -1,0 +1,250 @@
+<!doctype html>
+<html>
+  <head>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <title>Comparing adoloscent education between countries</title>
+
+    
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 20px;
+        font-family: sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      #div1 {
+        display: flex;
+        flex-direction: row; 
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: flex-start;
+        width: 100%;
+        gap: 20px;
+      }
+      #div2 {
+        display: flex;
+        justify-content: space-around;
+        width: 1200px;
+        margin-top: 10px;
+      }
+
+      select {
+        padding: 5px;
+        font-size: 14px;
+      }
+
+      svg {
+        border: 1px ;
+        padding-left: 62px;
+        padding-top: 31px;
+        padding-bottom: 52px;
+        padding-right: 31px;
+        overflow: visible;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h2>Comparing adoloscent education between countries</h2>
+
+    <div id="div1">
+      <svg id="svg1" width="450" height="400"></svg>
+      <svg id="svg2" width="450" height="400"></svg>
+      <div id="div2"></div>
+    </div>
+
+    <script>
+      var dataPath = "data/cleaned data.csv";
+
+      d3.csv(dataPath).then(function (myData) {
+        //Data cleaning
+        myData.forEach((element) => {
+          let num = element["Male math Prof"];
+          let num2 = element["Female Math prof"];
+          let num3 = element["Male Reading Prof"];
+          let num4 = element["Female Reading Prof"];
+          element["Male math Prof"] = num === "-" ? 0 : parseInt(num);
+          element["Female Math prof"] = num2 === "-" ? 0 : parseInt(num2);
+          element["Male Reading Prof"] = num3 === "-" ? 0 : parseInt(num3);
+          element["Female Reading Prof"] = num4 === "-" ? 0 : parseInt(num4);
+        });
+        myData = myData.filter(function (a) {
+          return a["Male math Prof"] > 0 || a["Female Math prof"] > 0;
+        });
+        myData = myData.filter(function (b) {
+          return b["Male Reading Prof"] > 0 || b["Female Reading Prof"] > 0;
+        });
+
+        w = 380;
+        h = 300;
+
+        var maingroups = [
+          "Male Math Proficiency",
+          "Female Math Proficiency",
+          "Male Reading Proficiency",
+          "Female Reading Proficiency",
+        ];
+        var groups = ["Math", "Reading"];
+        var gender = ["Male", "Female"];
+        
+        var cat = d3.scaleBand().range([0, w]).domain(groups).padding([0.3]);
+        var num = d3.scaleLinear().range([h, 0]).domain([0, 100]);
+
+        var grp = d3
+          .scaleBand()
+          .domain(gender)
+          .range([0, cat.bandwidth()])
+          .padding([0.05]);
+        var col = d3.scaleOrdinal().domain(gender).range(["orange", "green"]);
+
+        var svgone = d3.select("#svg1");
+        var firstchart = svgone.append("g");
+
+        firstchart
+          .append("g")
+          .selectAll("text")
+          .join("text")
+          .text((d) => d)
+          .attr("class", "cname")
+          .attr("text-anchor", "middle")
+          .style("font-weight", "bold")
+          .attr("x", w / 2)
+          .attr("y",-10);
+
+        firstchart
+          .append("g")
+          .attr("transform", `translate(0, ${h})`)
+          .call(d3.axisBottom(cat))
+          .selectAll("text")
+        firstchart.append("g").call(d3.axisLeft(num));
+
+       
+        var svgtwo = d3.select("#svg2");
+        var secondchart = svgtwo.append("g");
+
+        secondchart
+          .append("g")
+          .selectAll("text")
+          .join("text")
+          .text((d) => d)
+          .attr("class", "cname")
+          .attr("text-anchor", "middle")
+          .style("font-weight", "bold")
+          .attr("x", w / 2)
+          .attr("y", -10);
+
+        secondchart
+          .append("g")
+          .attr("transform", `translate(0, ${h})`)
+          .call(d3.axisBottom(cat))
+          .selectAll("text")
+        secondchart.append("g").call(d3.axisLeft(num));
+
+        //drp downs
+
+        var menu1 = d3.select("#div2").append("select");
+        menu1.on("change", function () {
+          updategraph(d3.select(this).property("value"), firstchart); 
+        });
+
+        menu1
+          .selectAll("country") 
+          .data(myData)
+          .enter()
+          .append("option")
+          .text(function (d) {
+            return d.Countries; }) 
+          .attr("value", function (d) {
+            return d.Countries;});
+
+        var menu2 = d3.select("#div2").append("select");
+
+        menu2.on("change", function () {
+          updategraph(d3.select(this).property("value"), secondchart); });
+
+        menu2
+          .selectAll("country")
+          .data(myData)
+          .enter()
+          .append("option")
+          .text(function (d) {
+            return d.Countries;
+          }) .attr("value", function (d) {
+            return d.Countries; });
+
+        function updategraph(name, chart) {
+          var field = myData.filter(function (d) {
+            return d.Countries == name;
+          });
+          var countrylist = field[0];
+          chart.select(".cname").text(countrylist.Countries);
+
+          var results = [
+            {
+              gender1: "Male",
+              c: countrylist["Male math Prof"],
+              subject: "Math",
+            },
+            {
+              gender1: "Female",
+              c: countrylist["Female Math prof"],
+              subject: "Math",
+            },
+            {
+              gender1: "Male",
+              c: countrylist["Male Reading Prof"],
+              subject: "Reading",
+            },
+            {
+              gender1: "Female",
+              c: countrylist["Female Reading Prof"],
+              subject: "Reading",
+            },
+          ];
+
+          var bars = chart
+            .selectAll("cgrp")
+            .data(groups)
+            .join("g")
+            .attr("class", "cgrp")
+            .attr("transform", function (g) {
+              return "translate(" + cat(g) + ",0)";
+            });
+
+          bars.selectAll(".bar").data(function (subname) {
+            return results.filter(function (j) {
+              return j.subject === subname;
+            });
+          })
+            .join("rect")
+            .attr("class", "bar")
+            .transition()
+            .duration(520)
+            .attr("x", function (d) {
+              return grp(d.gender1);
+            })
+            .attr("y", function (d) {
+              return num(d.c);
+            })
+            .attr("width", grp.bandwidth())
+            .attr("height", function (d) {
+              return h - num(d.c);
+            })
+            .style("fill", (d) => {
+              if (d.gender1 === "Male") {
+                return "orange";
+              } else {
+                return "green";
+              }
+            });
+        }
+		updategraph(myData[0].Countries, firstchart);
+    updategraph(myData[1].Countries, secondchart);
+      });
+    </script>
+  </body>
+</html>
