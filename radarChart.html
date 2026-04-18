@@ -15,20 +15,14 @@
         <h2>Radar Chart</h2>
 
         <script>
-
-            // ADD REAL DATA HERE /////////
-
-            let data = [];
-            let features = ["A", "B", "C", "D", "E", "F"];
-            // Generate data
-            for (var i = 0; i < 3; i++){
-                var point = {}
-                //each feature will be a random number from 1-9
-                features.forEach(f => point[f] = Math.random() * 10);
-                data.push(point);
-            }
-
-            ///////////////////////////////////
+            let allData = [];
+            let selectedCountries = [];
+            let features = ["antenatal_care_4plus_%", "continued_breastfeeding_%", 
+                            "gdp_percentile", "female_upper_secondary_education_%", 
+                            "female_labour_force_participation_%"];
+            
+            let featureLabels = ["Antenatal Care", "Breastfeeding", "GDP Percentile", 
+                                "Female Education", "Female Labour"];
 
 
             // Responsive svg view
@@ -38,7 +32,7 @@
                 .append("svg")
                 .attr("width", "30%") 
                 .attr("height", "30%")
-                .attr("viewBox", "0 0 600 600")
+                .attr("viewBox", "-100 -100 760 760")
                 .style("min-width", "350px") 
                 .style("min-height", "350px");
 
@@ -46,13 +40,14 @@
             let radialScale = d3.scaleLinear()
                 .domain([0, 10])
                 .range([0, 250]);
-            let ticks = [2, 4, 6, 8, 10];
+            let ticks = [0, 2, 4, 6, 8, 10];
 
             // Add circle
-            svg.selectAll("circle")
+            svg.selectAll(".grid-circle")
                 .data(ticks)
                 .join(
                     enter => enter.append("circle")
+                        .attr("class", "grid-circle") 
                         .attr("cx", width / 2)
                         .attr("cy", height / 2)
                         .attr("fill", "gray")
@@ -73,13 +68,20 @@
                         .text(d => (d * 10) + "%")
                 );
             
-            // Plot the axes 
+            // Function to convert angle to coordinate
             function angleToCoordinate(angle, value){
                 let x = Math.cos(angle) * radialScale(value);
                 let y = Math.sin(angle) * radialScale(value);
                 return {"x": width / 2 + x, "y": height / 2 - y};
             }
 
+            // Define line before using it
+            let line = d3.line()
+                .x(d => d.x)
+                .y(d => d.y)
+                .curve(d3.curveCardinalClosed);
+
+            // Create feature data for axes
             let featureData = features.map((f, i) => {
                 let angle = (Math.PI / 2) + (2 * Math.PI * i / features.length);
                 return {
@@ -90,67 +92,109 @@
                 };
             });
 
-            // draw axis line
+            // Draw axis line
             svg.selectAll("line")
                 .data(featureData)
-                .join(
-                    enter => enter.append("line")
-                        .attr("x1", width / 2)
-                        .attr("y1", height / 2)
-                        .attr("x2", d => d.line_coord.x)
-                        .attr("y2", d => d.line_coord.y)
-                        .attr("stroke","black")
-                );
+                .join("line")
+                .attr("x1", width / 2)
+                .attr("y1", height / 2)
+                .attr("x2", d => d.line_coord.x)
+                .attr("y2", d => d.line_coord.y)
+                .attr("stroke","black")
 
-            // draw axis label
+            // Draw axis label
             svg.selectAll(".axislabel")
                 .data(featureData)
-                .join(
-                    enter => enter.append("text")
-                        .attr("x", d => d.label_coord.x)
-                        .attr("y", d => d.label_coord.y)
-                        .text(d => d.name)
-                );
-            let line = d3.line()
-                .x(d => d.x)
-                .y(d => d.y)
-                .curve(d3.curveCardinalClosed);
+                .join("text")
+                .attr("x", d => d.label_coord.x)
+                .attr("y", d => d.label_coord.y)
+                .text((d, i) => featureLabels[i])
+                .attr("text-anchor", "middle")
+                .style("font-size", "18px");
             let colors = ["orange", "red", "darkblue"];
 
             function getPathCoordinates(data_point){
                 let coordinates = [];
                 for (var i = 0; i < features.length; i++){
                     let ft_name = features[i];
+                    let raw = data_point[ft_name];
+                    if (raw === "" || raw === undefined || isNaN(+raw)) continue;
                     let angle = (Math.PI / 2) + (2 * Math.PI * i / features.length);
-                    coordinates.push(angleToCoordinate(angle, data_point[ft_name]));
+                    coordinates.push(angleToCoordinate(angle, raw / 10));
                 }
                 return coordinates;
             }
 
-            // draw the path element
-            svg.selectAll("path")
-                .data(data)
-                .join(
-                    enter => enter.append("path")
-                        .datum(d => getPathCoordinates(d))
+
+            function updateRadar() {
+                // Remove old paths and circles
+                svg.selectAll("path").remove();
+                svg.selectAll("circle:not(.grid-circle)").remove();
+                
+                // Get selected countries data
+                let plotData = allData.filter(d => selectedCountries.includes(d.Country));
+
+
+                // Draw each country's path 
+                plotData.forEach((point, i) => {
+                    let coordinates = getPathCoordinates(point);
+                    let color = colors[i % colors.length];
+                    
+                    // Draw path
+                    svg.append("path")
+                        .datum(coordinates)
                         .attr("d", line)
-                        .attr("stroke-width", 2)
-                        .attr("stroke", (_, i) => colors[i])
-                        .attr("fill", (_, i) => colors[i])
+                        .attr("stroke-width", 4)
+                        .attr("stroke", (_, i) => color)
+                        .attr("fill", (_, i) => color)
                         .attr("stroke-opacity", 1)
                         .attr("fill-opacity", 0.3)
-                );
 
-            // draw points on the lines
-            data.forEach((point, i) => {
-                getPathCoordinates(point).forEach(coord => {
-                    svg.append("circle")
-                        .attr("cx", coord.x)
-                        .attr("cy", coord.y)
-                        .attr("r", 5)
-                        .attr("fill", colors[i])
+                // Draw points
+                    coordinates.forEach(coord => {
+                        svg.append("circle")
+                            .attr("cx", coord.x)
+                            .attr("cy", coord.y)
+                            .attr("r", 8)
+                            .attr("fill", color);
+                    });
                 });
+                svg.selectAll(".grid-circle").raise();
+            }
+            // Load CSV and create dropdown menu
+            d3.csv("maternal_factors.csv").then(function(csvData) {
+                allData = csvData;
+                
+                // Create dropdown
+                var menu = d3.select("body").append("select")
+                    .style("position", "absolute")
+                    .style("top", "100px")
+                    .style("right", "20px");
+                
+                // Add countries from the list 
+                menu.on("change", function() {
+                    let country = d3.select(this).property("value");
+                    if (!selectedCountries.includes(country)) {
+                        selectedCountries.push(country);
+                    } else {
+                        selectedCountries = selectedCountries.filter(c => c !== country);
+                            }
+                updateRadar();
             });
-
+            
+            menu.selectAll("option")
+                .data(allData)
+                .enter()
+                .append("option")
+                .text(d => d.Country)
+                .attr("value", d => d.Country);
+            
+            // Add first country by default
+            if (allData.length > 0) {
+                selectedCountries.push(allData[0].Country);
+                menu.property("value", allData[0].Country);
+                updateRadar();
+            }
+        });
     </script>
 </html>
