@@ -81,11 +81,17 @@
 			cursor: pointer;
 			transition: stroke-width .1s, stroke .1s;
 		}
-		.country:hover    { stroke: #111; stroke-width: 1.2px; }
-		.country.selected { stroke: #ff9800; stroke-width: 2.4px; }
+		.country:hover        { stroke: #111;    stroke-width: 1.2px; }
+		.country.selected-0   { stroke: #ff9800; stroke-width: 2.4px; }
+		.country.selected-1   { stroke: #3f51b5; stroke-width: 2.4px; }
 
-		.bubble { fill: #222; fill-opacity: .12; stroke: #222; stroke-opacity: .55; stroke-width: .6px; pointer-events: none; }
-		.person { fill: #1a1a1a; fill-opacity: .38; pointer-events: none; }
+		.bubble               { fill: #1a1a1a; fill-opacity: .06; stroke: #1a1a1a; stroke-opacity: .7; stroke-width: .7px; pointer-events: none; }
+		.bubble.selected-0    { fill: #ff9800; fill-opacity: .55; stroke: #c57600; stroke-opacity: .95; stroke-width: 1.3px; }
+		.bubble.selected-1    { fill: #3f51b5; fill-opacity: .55; stroke: #1a237e; stroke-opacity: .95; stroke-width: 1.3px; }
+
+		.person               { fill: #1a1a1a; fill-opacity: .38; pointer-events: none; }
+		.person.selected-0    { fill: #ff9800; fill-opacity: .95; }
+		.person.selected-1    { fill: #3f51b5; fill-opacity: .95; }
 
 		.tooltip {
 			position: absolute;
@@ -114,6 +120,35 @@
 			padding: 10px 12px;
 			font-size: 11px;
 		}
+
+		.zoom-controls {
+			position: absolute;
+			right: 16px;
+			top: 16px;
+			display: flex;
+			flex-direction: column;
+			gap: 3px;
+			background: rgba(255, 255, 255, .94);
+			border: 1px solid #ddd;
+			border-radius: 6px;
+			padding: 4px;
+			box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+		}
+		.zoom-controls button {
+			width: 28px;
+			height: 28px;
+			background: #fff;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+			font-size: 15px;
+			font-weight: 600;
+			color: #333;
+			line-height: 1;
+			padding: 0;
+			cursor: pointer;
+		}
+		.zoom-controls button:hover  { background: #e8e8e8; }
+		.zoom-controls button:active { background: #ddd; }
 		.legend h5 {
 			margin: 0 0 6px 0;
 			font-size: 11px;
@@ -188,6 +223,11 @@
 		</svg>
 		<div class="tooltip" id="tooltip" style="opacity:0;"></div>
 		<div class="legend" id="legend"></div>
+		<div class="zoom-controls">
+			<button id="zoom-in-btn"  title="Zoom in (+)"    aria-label="Zoom in">+</button>
+			<button id="zoom-out-btn" title="Zoom out (−)"   aria-label="Zoom out">−</button>
+			<button id="zoom-fit-btn" title="Reset zoom (0)" aria-label="Reset zoom">⌂</button>
+		</div>
 	</div>
 
 	<script>
@@ -195,13 +235,15 @@
 		(async () => {
 
 			// state
-			const ICON_CAP   = 5500;
-			let currentMetric = "continued_all";
-			let currentSize   = "pop_u5";
-			let currentStyle  = "pictogram";
-			let iconUnit      = 200000;
-			let selectedName  = null;
-			const pictoCache  = new Map();
+			const ICON_CAP     = 5500;
+			const MAX_SELECTED = 2;   // up to two countries can be pinned for comparison
+			let currentMetric  = "continued_all";
+			let currentSize    = "pop_u5";
+			let currentStyle   = "pictogram";
+			let iconUnit       = 200000;
+			let selectedNames  = [];  // [] | [a] | [a, b], oldest drops first
+			let skipTransition = false;  // set during resize so layers snap in sync
+			const pictoCache   = new Map();
 
 			// svg setup
 			const svg       = d3.select("#map");
@@ -306,8 +348,8 @@
 				const pop = t1Map.get(key) || {};
 				return {
 					country:           key,
-					pop_total:         pop.pop_total ?? null,
-					pop_u5:            pop.pop_u5    ?? null,
+					pop_total:         pop.pop_total,
+					pop_u5:            pop.pop_u5,
 					early_initiation:  parseNum(r[1]),
 					exclusive_u6m:     parseNum(r[3]),
 					continued_all:     parseNum(r[7]),
@@ -366,18 +408,19 @@
 				return rec[currentSize] || 0;
 			};
 
+			// bubble radius: sqrt so area is proportional to population;
+			// capped small enough that India/China bubbles don't swallow neighbours
 			let sizeScale;
 			const rebuildSizeScale = () => {
 				const vals = sowc.map(sizeValue).filter(v => v > 0);
-				sizeScale = d3.scaleSqrt().domain([0, d3.max(vals)]).range([0, 36]);
+				sizeScale = d3.scaleSqrt().domain([0, d3.max(vals)]).range([0, 20]);
 			};
 
 			// render
 			const draw = () => {
 				drawChoropleth();
 				drawPopulation();
-				gCountries.selectAll("path.country")
-					.classed("selected", d => d.properties.name === selectedName);
+				applySelection();
 			};
 
 			// draw country paths
@@ -421,19 +464,25 @@
 					if (!size) return null;
 					const c = path.centroid(d);
 					if (isNaN(c[0])) return null;
-					return { x: c[0], y: c[1], r: sizeScale(size), rec };
+					return { name: d.properties.name, x: c[0], y: c[1], r: sizeScale(size) };
 				}).filter(Boolean).sort((a, b) => b.r - a.r);
 
+				// during resize we want bubbles to snap to their new positions in lockstep
+				// with the country paths; otherwise a 400ms transition gives a visible lag
+				const maybeT = s => skipTransition ? s : s.transition().duration(400);
+
 				gBubbles.selectAll("circle.bubble")
-					.data(centers, d => d.rec.country)
+					.data(centers, d => d.name)
 					.join(
 						enter => enter.append("circle").attr("class", "bubble")
-							.attr("cx", d => d.x).attr("cy", d => d.y).attr("r", 0)
-							.call(s => s.transition().duration(400).attr("r", d => d.r)),
-						update => update.call(s => s.transition().duration(400)
+							.attr("cx", d => d.x).attr("cy", d => d.y)
+							.attr("r", skipTransition ? d => d.r : 0)
+							.call(s => maybeT(s).attr("r", d => d.r)),
+						update => update.call(s => maybeT(s)
 							.attr("cx", d => d.x).attr("cy", d => d.y).attr("r", d => d.r)),
 						exit => exit.remove()
 					);
+				applySelection();
 			};
 
 			// draw pictograms
@@ -449,7 +498,7 @@
 						if (!pop) return null;
 						// SOWC pop columns are in thousands
 						const n = Math.max(1, Math.round(pop * 1000 / iconUnit));
-						return { feat, rec, n };
+						return { feat, n };
 					}).filter(Boolean);
 
 					// global icon cap for performance
@@ -460,9 +509,9 @@
 					}
 
 					points = [];
-					raw.forEach(({ feat, rec, n }) => {
+					raw.forEach(({ feat, n }) => {
 						samplePointsIn(feat, n).forEach(([x, y]) =>
-							points.push({ x, y, country: rec.country }));
+							points.push({ x, y, country: feat.properties.name }));
 					});
 					pictoCache.set(cacheKey, points);
 				}
@@ -478,13 +527,14 @@
 							.attr("height", iconSize)
 							.attr("x", d => d.x - iconSize * 0.3)
 							.attr("y", d => d.y - iconSize * 0.75)
-							.style("opacity", 0)
-							.call(s => s.transition().duration(350).style("opacity", 1)),
+							.style("opacity", skipTransition ? 1 : 0)
+							.call(s => skipTransition ? s : s.transition().duration(350).style("opacity", 1)),
 						update => update
 							.attr("x", d => d.x - iconSize * 0.3)
 							.attr("y", d => d.y - iconSize * 0.75),
 						exit => exit.remove()
 					);
+				applySelection();
 			};
 
 			// sample random points inside a country polygon
@@ -536,18 +586,18 @@
 
 			// tooltip
 			const showTooltip = (e, d) => {
-				const rec = byName.get(d.properties.name);
-				const gap = (rec && rec.continued_richest != null && rec.continued_poorest != null)
+				const rec = byName.get(d.properties.name) || {};
+				const gap = (rec.continued_richest != null && rec.continued_poorest != null)
 					? rec.continued_richest - rec.continued_poorest : null;
 				const rows = [
-					["Continued BF (All)",         rec?.continued_all],
-					["Continued BF (Poorest 20%)", rec?.continued_poorest],
-					["Continued BF (Richest 20%)", rec?.continued_richest],
+					["Continued BF (All)",         rec.continued_all],
+					["Continued BF (Poorest 20%)", rec.continued_poorest],
+					["Continued BF (Richest 20%)", rec.continued_richest],
 					["Gap (Rich − Poor)",          gap],
-					["Early initiation %",         rec?.early_initiation],
-					["Exclusive BF <6m %",         rec?.exclusive_u6m],
-					["Total pop (k)",              rec?.pop_total],
-					["Under-5 pop (k)",            rec?.pop_u5]
+					["Early initiation %",         rec.early_initiation],
+					["Exclusive BF <6m %",         rec.exclusive_u6m],
+					["Total pop (k)",              rec.pop_total],
+					["Under-5 pop (k)",            rec.pop_u5]
 				];
 				const fmt = v => v == null ? '<span style="color:#aaa">—</span>' :
 					(typeof v === "number" ? v.toLocaleString(undefined, { maximumFractionDigits: 1 }) : v);
@@ -562,17 +612,41 @@
 			const hideTooltip = () => tooltip.style("opacity", 0);
 
 			// selection
-			// broadcast countrySelected event for radar and bar views
+			// up to MAX_SELECTED countries can be pinned at once; clicking a pinned
+			// country unpins it, clicking a third drops the oldest
 			const toggleSelect = (feat) => {
 				const name = feat.properties.name;
-				selectedName = (selectedName === name) ? null : name;
-				gCountries.selectAll("path.country")
-					.classed("selected", d => d.properties.name === selectedName);
-				d3.select("#selected-label").text(selectedName ? "Selected: " + selectedName : "");
+				const i = selectedNames.indexOf(name);
+				if (i >= 0) {
+					selectedNames.splice(i, 1);
+				} else {
+					selectedNames.push(name);
+					if (selectedNames.length > MAX_SELECTED) selectedNames.shift();
+				}
+				applySelection();
+				broadcastSelection();
+			};
+
+			// repaint country outlines, bubbles and pictograms to match selectedNames
+			// slot 0 = first pinned (orange), slot 1 = second pinned (indigo)
+			const applySelection = () => {
+				const paint = (sel, nameOf) =>
+					sel.classed("selected-0", d => nameOf(d) === selectedNames[0])
+					   .classed("selected-1", d => nameOf(d) === selectedNames[1]);
+				paint(gCountries.selectAll("path.country"), d => d.properties.name);
+				paint(gBubbles.selectAll("circle.bubble"),  d => d.name);
+				paint(gPictograms.selectAll("use.person"),  d => d.country);
+
+				d3.select("#selected-label")
+					.text(selectedNames.length ? "Selected: " + selectedNames.join("  vs  ") : "");
+			};
+
+			// broadcast countrySelected event for radar and bar views
+			const broadcastSelection = () => {
 				window.dispatchEvent(new CustomEvent("countrySelected", {
 					detail: {
-						country: selectedName,
-						data: selectedName ? byName.get(selectedName) : null
+						countries: selectedNames.slice(),
+						data:      selectedNames.map(n => byName.get(n) || null)
 					}
 				}));
 			};
@@ -705,24 +779,46 @@
 				if (currentStyle === "pictogram") { drawPopulation(); drawLegend(); }
 			});
 
+			// zoom helpers
+			// d3.zoom already handles wheel and trackpad pinch (pinch comes through
+			// as ctrl+wheel on macOS), plus touch pinch on touchscreens. We just add
+			// buttons and keyboard shortcuts on top.
+			const zoomBy    = (k)   => svg.transition().duration(200).call(zoom.scaleBy, k);
+			const resetZoom = (ms = 400) => svg.transition().duration(ms).call(zoom.transform, d3.zoomIdentity);
+
+			d3.select("#zoom-in-btn").on("click",  () => zoomBy(1.5));
+			d3.select("#zoom-out-btn").on("click", () => zoomBy(1 / 1.5));
+			d3.select("#zoom-fit-btn").on("click", () => resetZoom());
+
+			// keyboard: + / = to zoom in, - / _ to zoom out, 0 to reset
+			// ignore while the user is typing in a form control
+			window.addEventListener("keydown", (e) => {
+				if (e.target.matches("input, select, textarea")) return;
+				if (e.key === "+" || e.key === "=")       { zoomBy(1.5);     e.preventDefault(); }
+				else if (e.key === "-" || e.key === "_")  { zoomBy(1 / 1.5); e.preventDefault(); }
+				else if (e.key === "0")                    { resetZoom();     e.preventDefault(); }
+			});
+
 			d3.select("#reset-btn").on("click", () => {
-				selectedName = null;
-				d3.select("#selected-label").text("");
-				gCountries.selectAll("path.country").classed("selected", false);
-				svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
-				window.dispatchEvent(new CustomEvent("countrySelected",
-					{ detail: { country: null, data: null } }));
+				selectedNames = [];
+				applySelection();
+				resetZoom(500);
+				broadcastSelection();
 			});
 
 			// resize
-			// clear picto cache since points are in screen space
+			// clear picto cache since points are in screen space; set skipTransition
+			// so bubbles/pictograms snap in sync with country paths instead of
+			// animating 400ms behind them
 			window.addEventListener("resize", () => {
+				skipTransition = true;
 				W = svg.node().clientWidth;
 				H = svg.node().clientHeight;
 				projection.fitSize([W, H * 0.95], { type: "Sphere" });
 				gCountries.selectAll("path.country").attr("d", path);
 				pictoCache.clear();
 				draw();
+				skipTransition = false;
 			});
 
 		})();
