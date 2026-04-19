@@ -79,19 +79,25 @@
 			stroke: #fff;
 			stroke-width: .4px;
 			cursor: pointer;
-			transition: stroke-width .1s, stroke .1s;
+			transition: stroke-width .1s, stroke .1s, opacity .25s;
 		}
 		.country:hover        { stroke: #111;    stroke-width: 1.2px; }
 		.country.selected-0   { stroke: #ff9800; stroke-width: 2.4px; }
 		.country.selected-1   { stroke: #3f51b5; stroke-width: 2.4px; }
+		.country.dimmed       { opacity: .28; }
+		.country.dimmed:hover { opacity: .7; }
 
-		.bubble               { fill: #1a1a1a; fill-opacity: .06; stroke: #1a1a1a; stroke-opacity: .7; stroke-width: .7px; pointer-events: none; }
+		.bubble               { fill: #1a1a1a; fill-opacity: .06; stroke: #1a1a1a; stroke-opacity: .7; stroke-width: .7px; pointer-events: none; transition: opacity .25s; }
 		.bubble.selected-0    { fill: #ff9800; fill-opacity: .55; stroke: #c57600; stroke-opacity: .95; stroke-width: 1.3px; }
 		.bubble.selected-1    { fill: #3f51b5; fill-opacity: .55; stroke: #1a237e; stroke-opacity: .95; stroke-width: 1.3px; }
+		.bubble.dimmed        { opacity: .25; }
 
-		.person               { fill: #1a1a1a; fill-opacity: .38; pointer-events: none; }
-		.person.selected-0    { fill: #ff9800; fill-opacity: .95; }
-		.person.selected-1    { fill: #3f51b5; fill-opacity: .95; }
+		/* Pictograms stay dark on selected countries too — one per 200k people
+		   means 200+ icons inside India, and a coloured fill at high opacity
+		   would blur them into a single solid blob. Selection is conveyed by
+		   the country outline + dimming the rest of the map. */
+		.person               { fill: #1a1a1a; fill-opacity: .38; pointer-events: none; transition: opacity .25s; }
+		.person.dimmed        { opacity: .3; }
 
 		.tooltip {
 			position: absolute;
@@ -559,12 +565,20 @@
 					return pts;
 				}
 
+				// geoBounds returns lon0 > lon1 for antimeridian-crossing shapes
+				// (Russia, Fiji, USA-with-Alaska, NZ). If we don't detect that,
+				// the sampler fires random points in [lon1, lon0] — the other
+				// half of the globe — nothing passes geoContains, and the
+				// centroid fallback dumps every icon onto one spot.
 				const [[lon0, lat0], [lon1, lat1]] = d3.geoBounds(feature);
-				const dLon = lon1 - lon0, dLat = lat1 - lat0;
+				const wraps = lon1 < lon0;
+				const dLon  = wraps ? (360 - lon0 + lon1) : (lon1 - lon0);
+				const dLat  = lat1 - lat0;
 				const maxTries = Math.max(200, n * 40);
 				let tries = 0;
 				while (pts.length < n && tries < maxTries) {
-					const lon = lon0 + Math.random() * dLon;
+					let lon = lon0 + Math.random() * dLon;
+					if (lon > 180) lon -= 360;
 					const lat = lat0 + Math.random() * dLat;
 					if (d3.geoContains(feature, [lon, lat])) {
 						const p = projection([lon, lat]);
@@ -629,10 +643,14 @@
 
 			// repaint country outlines, bubbles and pictograms to match selectedNames
 			// slot 0 = first pinned (orange), slot 1 = second pinned (indigo)
+			// when at least one country is pinned, everyone else gets `.dimmed`
+			// so the comparison pair pops against the map
 			const applySelection = () => {
+				const hasSel = selectedNames.length > 0;
 				const paint = (sel, nameOf) =>
 					sel.classed("selected-0", d => nameOf(d) === selectedNames[0])
-					   .classed("selected-1", d => nameOf(d) === selectedNames[1]);
+					   .classed("selected-1", d => nameOf(d) === selectedNames[1])
+					   .classed("dimmed",     d => hasSel && !selectedNames.includes(nameOf(d)));
 				paint(gCountries.selectAll("path.country"), d => d.properties.name);
 				paint(gBubbles.selectAll("circle.bubble"),  d => d.name);
 				paint(gPictograms.selectAll("use.person"),  d => d.country);
