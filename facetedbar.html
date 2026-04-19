@@ -3,7 +3,7 @@
   <head>
     <script src="https://d3js.org/d3.v7.min.js"></script>
 
-    <title>Comparing adoloscent education between countries</title>
+    <title>Breastfeeding rates among richest and poorest 20%</title>
 
     
     <style>
@@ -156,16 +156,14 @@
 
           bars.selectAll(".bar").data(function (subname) {
             return results.filter(function (j) {
-              return j.subject === subname;
+              return j.group === subname;
             });
           })
             .join("rect")
             .attr("class", "bar")
             .transition()
             .duration(520)
-            .attr("x", function (d) {
-              return cat(d.group);
-            })
+            .attr("x",0)
             .attr("y", function (d) {
               return num(d.c);
             })
@@ -173,16 +171,15 @@
             .attr("height", function (d) {
               return h - num(d.c);
             })
-            .style("fill", (d) => {
+            .style("fill",function(d) {
               if (d.group === "Poorest 20%") {
                 return "orange";
               } else {
-                return "green";
+                return "blue";
               }
             });
         }
-		updategraph(myData[0].Countries, firstchart);
-    updategraph(myData[1].Countries, secondchart);
+
       });
     </script>
   </body>
