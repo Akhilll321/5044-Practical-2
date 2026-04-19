@@ -79,12 +79,7 @@
         var cat = d3.scaleBand().range([0, w]).domain(groups).padding([0.3]);
         var num = d3.scaleLinear().range([h, 0]).domain([0, 100]);
 
-        var grp = d3
-          .scaleBand()
-          .domain(gender)
-          .range([0, cat.bandwidth()])
-          .padding([0.05]);
-        var col = d3.scaleOrdinal().domain(gender).range(["orange", "green"]);
+    
 
         var svgone = d3.select("#svg1");
         var firstchart = svgone.append("g");
