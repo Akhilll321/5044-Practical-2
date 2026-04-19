@@ -272,41 +272,22 @@
 			});
 			svg.call(zoom);
 
-			// map SOWC names to world-atlas names
+			// map CSV country names (used by both final_new.csv and the renamed
+			// SOWC demographics CSV) to world-atlas@2 110m country names
 			const nameOverrides = {
-				"United States": "United States of America",
-				"Russian Federation": "Russia",
-				"Korea, Republic of": "South Korea",
-				"Republic of Korea": "South Korea",
-				"Democratic People's Republic of Korea": "North Korea",
-				"Korea, Democratic People's Republic of": "North Korea",
-				"Viet Nam": "Vietnam",
-				"Lao People's Democratic Republic": "Laos",
-				"Syrian Arab Republic": "Syria",
-				"Iran (Islamic Republic of)": "Iran",
-				"Iran, Islamic Republic of": "Iran",
-				"Bolivia (Plurinational State of)": "Bolivia",
-				"Venezuela (Bolivarian Republic of)": "Venezuela",
-				"Tanzania, United Republic of": "Tanzania",
-				"United Republic of Tanzania": "Tanzania",
-				"Congo": "Republic of the Congo",
-				"Democratic Republic of the Congo": "Dem. Rep. Congo",
-				"Côte d'Ivoire": "Côte d'Ivoire",
-				"Cote d'Ivoire": "Côte d'Ivoire",
-				"Czechia": "Czech Republic",
-				"Republic of Moldova": "Moldova",
-				"Moldova, Republic of": "Moldova",
-				"North Macedonia": "Macedonia",
-				"State of Palestine": "Palestine",
-				"Eswatini": "eSwatini",
-				"Türkiye": "Turkey",
-				"Turkiye": "Turkey",
-				"Bahamas": "The Bahamas",
-				"Gambia": "The Gambia",
-				"Brunei Darussalam": "Brunei",
-				"Micronesia (Federated States of)": "Federated States of Micronesia",
-				"Cabo Verde": "Cape Verde",
-				"Timor-Leste": "East Timor"
+				"The Bahamas": "Bahamas",
+				"The Gambia": "Gambia",
+				"Czech Republic": "Czechia",
+				"Dominican Republic": "Dominican Rep.",
+				"Central African Republic": "Central African Rep.",
+				"Republic of the Congo": "Congo",
+				"Solomon Islands": "Solomon Is.",
+				"South Sudan": "S. Sudan",
+				"East Timor": "Timor-Leste",
+				"Equatorial Guinea": "Eq. Guinea",
+				"Bosnia and Herzegovina": "Bosnia and Herz.",
+				"Kosovo (UNSCR 1244)": "Kosovo",
+				"Netherlands (Kingdom of the)": "Netherlands"
 			};
 			const normalize = (n) => nameOverrides[n] || n;
 
@@ -335,31 +316,48 @@
 				return out;
 			};
 
+			const loadFinalCsv = async (url) => {
+				const buf  = await fetch(url).then(r => r.arrayBuffer());
+				const txt  = new TextDecoder("windows-1252").decode(buf);
+				const rows = d3.csvParseRows(txt);
+				const out  = [];
+				for (let i = 2; i < rows.length; i++) {
+					const name = (rows[i][0] || "").trim();
+					if (!name) continue;
+					out.push(rows[i]);
+				}
+				return out;
+			};
+
 			const [world, t1Rows, t9Rows] = await Promise.all([
 				d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"),
 				loadSowcCsv("data/1-Demographics-SOWC2025-1.csv"),
-				loadSowcCsv("data/9-Nutrition-breastfeeding-diets-SOWC2025-1.csv")
+				loadFinalCsv("data/final_new.csv")
 			]);
 
+			// key t1Map by world-atlas name so final_new rows can look up pop data
 			const t1Map = new Map();
 			t1Rows.forEach((r) => {
-				t1Map.set(r[0].trim(), {
+				t1Map.set(normalize(r[0].trim()), {
 					pop_total: parseNum(r[1]),
 					pop_u5:    parseNum(r[5])
 				});
 			});
 
+			// final_new.csv column layout:
+			// 0=Country 7=Exclusive BF <6m 8=Early initiation
+			// 9=Continued BF (All) 10=Continued BF (Poorest 20%) 11=Continued BF (Richest 20%)
 			const sowc = t9Rows.map((r) => {
 				const key = r[0].trim();
-				const pop = t1Map.get(key) || {};
+				const pop = t1Map.get(normalize(key)) || {};
 				return {
 					country:           key,
 					pop_total:         pop.pop_total,
 					pop_u5:            pop.pop_u5,
-					early_initiation:  parseNum(r[1]),
-					exclusive_u6m:     parseNum(r[3]),
-					continued_all:     parseNum(r[7]),
-					continued_poorest: parseNum(r[9]),
+					early_initiation:  parseNum(r[8]),
+					exclusive_u6m:     parseNum(r[7]),
+					continued_all:     parseNum(r[9]),
+					continued_poorest: parseNum(r[10]),
 					continued_richest: parseNum(r[11])
 				};
 			});
@@ -415,7 +413,6 @@
 			};
 
 			// bubble radius: sqrt so area is proportional to population;
-			// capped small enough that India/China bubbles don't swallow neighbours
 			let sizeScale;
 			const rebuildSizeScale = () => {
 				const vals = sowc.map(sizeValue).filter(v => v > 0);
@@ -565,11 +562,7 @@
 					return pts;
 				}
 
-				// geoBounds returns lon0 > lon1 for antimeridian-crossing shapes
-				// (Russia, Fiji, USA-with-Alaska, NZ). If we don't detect that,
-				// the sampler fires random points in [lon1, lon0] — the other
-				// half of the globe — nothing passes geoContains, and the
-				// centroid fallback dumps every icon onto one spot.
+				// control geobound plot
 				const [[lon0, lat0], [lon1, lat1]] = d3.geoBounds(feature);
 				const wraps = lon1 < lon0;
 				const dLon  = wraps ? (360 - lon0 + lon1) : (lon1 - lon0);
@@ -644,7 +637,6 @@
 			// repaint country outlines, bubbles and pictograms to match selectedNames
 			// slot 0 = first pinned (orange), slot 1 = second pinned (indigo)
 			// when at least one country is pinned, everyone else gets `.dimmed`
-			// so the comparison pair pops against the map
 			const applySelection = () => {
 				const hasSel = selectedNames.length > 0;
 				const paint = (sel, nameOf) =>
@@ -798,9 +790,6 @@
 			});
 
 			// zoom helpers
-			// d3.zoom already handles wheel and trackpad pinch (pinch comes through
-			// as ctrl+wheel on macOS), plus touch pinch on touchscreens. We just add
-			// buttons and keyboard shortcuts on top.
 			const zoomBy    = (k)   => svg.transition().duration(200).call(zoom.scaleBy, k);
 			const resetZoom = (ms = 400) => svg.transition().duration(ms).call(zoom.transform, d3.zoomIdentity);
 
@@ -825,9 +814,6 @@
 			});
 
 			// resize
-			// clear picto cache since points are in screen space; set skipTransition
-			// so bubbles/pictograms snap in sync with country paths instead of
-			// animating 400ms behind them
 			window.addEventListener("resize", () => {
 				skipTransition = true;
 				W = svg.node().clientWidth;
