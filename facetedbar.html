@@ -63,10 +63,8 @@
       d3.csv(dataPath).then(function (myData) {
         //Data cleaning
         myData.forEach((element) => {
-          let num = element["Male math Prof"];
+          let num = element["Poores"];
           let num2 = element["Female Math prof"];
-          let num3 = element["Male Reading Prof"];
-          let num4 = element["Female Reading Prof"];
           element["Male math Prof"] = num === "-" ? 0 : parseInt(num);
           element["Female Math prof"] = num2 === "-" ? 0 : parseInt(num2);
           element["Male Reading Prof"] = num3 === "-" ? 0 : parseInt(num3);
