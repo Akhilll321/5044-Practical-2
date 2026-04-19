@@ -164,37 +164,13 @@
             // Load CSV and create dropdown menu
             d3.csv("maternal_factors.csv").then(function(csvData) {
                 allData = csvData;
-                
-                // Create dropdown
-                var menu = d3.select("body").append("select")
-                    .style("position", "absolute")
-                    .style("top", "100px")
-                    .style("right", "20px");
-                
-                // Add countries from the list 
-                menu.on("change", function() {
-                    let country = d3.select(this).property("value");
-                    if (!selectedCountries.includes(country)) {
-                        selectedCountries.push(country);
-                    } else {
-                        selectedCountries = selectedCountries.filter(c => c !== country);
-                            }
-                updateRadar();
-            });
-            
-            menu.selectAll("option")
-                .data(allData)
-                .enter()
-                .append("option")
-                .text(d => d.Country)
-                .attr("value", d => d.Country);
-            
-            // Add first country by default
+            // Add first country
             if (allData.length > 0) {
                 selectedCountries.push(allData[0].Country);
                 menu.property("value", allData[0].Country);
                 updateRadar();
             }
+            
         });
     </script>
 </html>
