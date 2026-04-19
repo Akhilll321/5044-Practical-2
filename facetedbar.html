@@ -141,8 +141,8 @@
 
           var results = [
             {
-               group: "Poorest 20%", c: countryList["Poorest 20%"]},
-               {group:"Richest 20%", c: countryList["Richest 20%"]}
+               group: "Poorest 20%", c: countrylist["Poorest 20%"]},
+               {group:"Richest 20%", c: countrylist["Richest 20%"]}
           ];
 
           var bars = chart
@@ -167,7 +167,7 @@
             .attr("y", function (d) {
               return num(d.c);
             })
-            .attr("width", grp.bandwidth())
+            .attr("width", cat.bandwidth())
             .attr("height", function (d) {
               return h - num(d.c);
             })
