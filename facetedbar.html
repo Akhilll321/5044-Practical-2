@@ -54,40 +54,27 @@
     <div id="div1">
       <svg id="svg1" width="450" height="400"></svg>
       <svg id="svg2" width="450" height="400"></svg>
-      <div id="div2"></div>
+      
     </div>
 
     <script>
-      var dataPath = "data/cleaned data.csv";
+      var dataPath = "data/final_new2.csv";
 
       d3.csv(dataPath).then(function (myData) {
         //Data cleaning
         myData.forEach((element) => {
-          let num = element["Poores"];
-          let num2 = element["Female Math prof"];
-          element["Male math Prof"] = num === "-" ? 0 : parseInt(num);
-          element["Female Math prof"] = num2 === "-" ? 0 : parseInt(num2);
-          element["Male Reading Prof"] = num3 === "-" ? 0 : parseInt(num3);
-          element["Female Reading Prof"] = num4 === "-" ? 0 : parseInt(num4);
-        });
-        myData = myData.filter(function (a) {
-          return a["Male math Prof"] > 0 || a["Female Math prof"] > 0;
-        });
-        myData = myData.filter(function (b) {
-          return b["Male Reading Prof"] > 0 || b["Female Reading Prof"] > 0;
+          let poorest = element["Poorest 20%"];
+          let richest = element["Richest 20%"];
+          element["Poorest 20%"] = poorest === "-" ? 0 : parseInt(poorest);
+          element["Richest 20%"] = richest === "-" ? 0 : parseInt(richest);
+
         });
 
         w = 380;
         h = 300;
 
-        var maingroups = [
-          "Male Math Proficiency",
-          "Female Math Proficiency",
-          "Male Reading Proficiency",
-          "Female Reading Proficiency",
-        ];
-        var groups = ["Math", "Reading"];
-        var gender = ["Male", "Female"];
+        
+        var groups = ["Poorest 20%", "Richest 20%"];
         
         var cat = d3.scaleBand().range([0, w]).domain(groups).padding([0.3]);
         var num = d3.scaleLinear().range([h, 0]).domain([0, 100]);
@@ -144,36 +131,7 @@
 
         //drp downs
 
-        var menu1 = d3.select("#div2").append("select");
-        menu1.on("change", function () {
-          updategraph(d3.select(this).property("value"), firstchart); 
-        });
-
-        menu1
-          .selectAll("country") 
-          .data(myData)
-          .enter()
-          .append("option")
-          .text(function (d) {
-            return d.Countries; }) 
-          .attr("value", function (d) {
-            return d.Countries;});
-
-        var menu2 = d3.select("#div2").append("select");
-
-        menu2.on("change", function () {
-          updategraph(d3.select(this).property("value"), secondchart); });
-
-        menu2
-          .selectAll("country")
-          .data(myData)
-          .enter()
-          .append("option")
-          .text(function (d) {
-            return d.Countries;
-          }) .attr("value", function (d) {
-            return d.Countries; });
-
+        
         function updategraph(name, chart) {
           var field = myData.filter(function (d) {
             return d.Countries == name;
@@ -183,25 +141,8 @@
 
           var results = [
             {
-              gender1: "Male",
-              c: countrylist["Male math Prof"],
-              subject: "Math",
-            },
-            {
-              gender1: "Female",
-              c: countrylist["Female Math prof"],
-              subject: "Math",
-            },
-            {
-              gender1: "Male",
-              c: countrylist["Male Reading Prof"],
-              subject: "Reading",
-            },
-            {
-              gender1: "Female",
-              c: countrylist["Female Reading Prof"],
-              subject: "Reading",
-            },
+               group: "Poorest 20%", c: countryList["Poorest 20%"]},
+               {group:"Richest 20%", c: countryList["Richest 20%"]}
           ];
 
           var bars = chart
@@ -223,7 +164,7 @@
             .transition()
             .duration(520)
             .attr("x", function (d) {
-              return grp(d.gender1);
+              return cat(d.group);
             })
             .attr("y", function (d) {
               return num(d.c);
@@ -233,7 +174,7 @@
               return h - num(d.c);
             })
             .style("fill", (d) => {
-              if (d.gender1 === "Male") {
+              if (d.group === "Poorest 20%") {
                 return "orange";
               } else {
                 return "green";
