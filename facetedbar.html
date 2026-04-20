@@ -70,6 +70,8 @@
 
         });
 
+     
+
         w = 380;
         h = 300;
 
@@ -124,15 +126,19 @@
           .selectAll("text")
         secondchart.append("g").call(d3.axisLeft(num));
 
-        //drp downs
-
-        
+     
         function updategraph(name, chart) {
           var field = myData.filter(function (d) {
             return d.Countries == name;
           });
           var countrylist = field[0];
           chart.select(".cname").text(countrylist.Countries);
+         if(countrylist["Poorest 20%"]===0){
+          alert("No data available for the poorest 20% for this country ")
+         }
+         if(countrylist["Richest 20%"]===0){
+          alert("No data available for the richest 20% for this country")
+         }
 
           var results = [
             {
@@ -149,11 +155,7 @@
               return "translate(" + cat(g) + ",0)";
             });
 
-            results.forEach(function(d){
-              if(d.c===0){
-                alert("No data for bar chart");
-              }
-            })
+           
 
           bars.selectAll(".bar").data(function (subname) {
             return results.filter(function (j) {
