@@ -149,11 +149,18 @@
               return "translate(" + cat(g) + ",0)";
             });
 
+            results.forEach(function(d){
+              if(d.c===0){
+                alert("No data for bar chart");
+              }
+            })
+
           bars.selectAll(".bar").data(function (subname) {
             return results.filter(function (j) {
               return j.group === subname;
             });
           })
+
             .join("rect")
             .attr("class", "bar")
             .transition()
