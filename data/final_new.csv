@@ -1,4 +1,4 @@
-Country,antenatal_care_4plus_%,Neonatal deaths,gdp_per_capita_USD,female_upper_secondary_education_%,female_labour_force_participation_%,gdp_percentile,Exclusive breastfeeding (<6 months) (%),Early initiation of breastfeeding (%),Continued breastfeeding (12–23 months) (%),,
+Country,antenatal_care_4plus_%,Neonatal deaths,gdp_per_capita_USD,female_upper_secondary_education_%,female_labour_force_participation_%,gdp_percentile,Exclusive breastfeeding (<6 months) (%),Early initiation of breastfeeding (%),Continued breastfeeding (12ï¿½23 months) (%),,
 ,,,,,,,,,All children,Poorest 20%,Richest 20%
 Afghanistan,33,50,353,6,16,1.04,63,48,68,74,66
 Albania,78,8,8368,46,53,55.44,37,57,43,38,37
@@ -43,7 +43,7 @@ Comoros,64,36,1587,19,47,16.58,23,17,59,53,60
 Republic of the Congo,79,28,2509,14,68,26.94,33,25,32,54,20
 Cook Islands,,12,,,,,-,-,-,-,-
 Costa Rica,94,9,16595,42,44,68.91,25,53,46,47,40
-Côte d'Ivoire,56,47,2729,8,59,29.02,34,42,59,76,40
+Cï¿½te d'Ivoire,56,47,2729,8,59,29.02,34,42,59,76,40
 Croatia,97,4,21460,75,47,72.54,24,-,-,-,-
 Cuba,79,7,9500,56,41,58.55,41,64,25,35,23
 Cyprus,,3,34701,77,61,84.46,-,-,-,-,-
