@@ -196,8 +196,6 @@
           d3.select("#empty-msg").style("display", hasAny ? "none" : null);
           d3.select("#div1")    .style("display", hasAny ? null : "none");
 
-          d3.select("#div1").style("flex-direction", names.length > 1 ? "column" : "row");
-
           if (names[0]) updategraph(names[0], firstchart,  0); else clearChart(firstchart);
           if (names[1]) updategraph(names[1], secondchart, 1); else clearChart(secondchart);
 
