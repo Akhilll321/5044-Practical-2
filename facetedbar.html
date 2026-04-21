@@ -8,42 +8,37 @@
     <style>
       body,
       html {
-        margin: 0;
-        padding: 10px;
-        font-family: sans-serif;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        overflow: hidden;
+        margin-top:20px;
+        flex-direction:column;
       }
       h2 {
-        font-size: 14px;
-        margin: 10px 0 4px 0;
-        text-align: center;
+        font-size: 16px;
+        text-align:center;
+        font-weight:bold;
+        
       }
       #div1 {
-        display: flex;
-        flex-direction: row; 
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: flex-start;
-        width: 100%;
-        gap: 10px;
-      
+       display:flex;
+       margin-top:30px;
+       margin-left:10px;
       }
 
       svg {
-        padding-left: 42px;
-        padding-top: 18px;
-        padding-bottom: 30px;
-        padding-right: 18px;
-        overflow: visible;
+        overflow:visible;
+        padding-left: 32px;
+        padding-top: 23px;
+        padding-right: 55px;
+       
       }
       
-      /*color consistency*/
-      .cname        { font-size: 12px; font-weight: bold; }
-      .cname.slot-0 { fill: #ff9800; } 
-      .cname.slot-1 { fill: #3f51b5; }
+      #svg1 {fill:#ff9800; 
+      }
+      #svg2 { fill:#3f51b5;
+       }
+      
+      .cname        {
+         font-size: 19px;
+         font-weight: bold; }
 
       .nodata-note {
         font-size: 10px;
@@ -51,7 +46,7 @@
         font-style: italic;
       }
 
-      .empty-msg {
+      .empty {
         color: #999;
         font-size: 12px;
         text-align: center;
@@ -63,11 +58,11 @@
   <body>
     <h2>Comparison of Continued Breastfeeding Rates Between the Richest and Poorest 20% by Country</h2>
 
-     <div id="empty-msg" class="empty-msg">Click one or two countries on the map to see its Poorest-vs-Richest comparison.</div>
+     <div id="empty" class="empty">Click one or two countries on the map to see its Poorest-vs-Richest comparison.</div>
 
     <div id="div1" style="display:none;">
-      <svg id="svg1" width="240" height="180" viewBox="0 0 240 180" preserveAspectRatio="xMidYMid meet"></svg>
-      <svg id="svg2" width="240" height="180" viewBox="0 0 240 180" preserveAspectRatio="xMidYMid meet"></svg>
+      <svg id="svg1" width="270" height="220"></svg>
+      <svg id="svg2" width="270" height="220"></svg>
     
     </div>
 
@@ -75,27 +70,24 @@
     <script>
       var dataPath = "data/final_new3.csv";
 
-      // country-level colours matching the map (slot 0 = orange, slot 1 = indigo)
-      var slotColors = ["#ff9800", "#3f51b5"];
-
       d3.csv(dataPath).then(function (myData) {
         // Data cleaning
         myData.forEach((element) => {
           let poorest = element["Poorest 20%"];
           let richest = element["Richest 20%"];
-          element["Poorest 20%"] = poorest === "-" ? null : parseInt(poorest);
-          element["Richest 20%"] = richest === "-" ? null : parseInt(richest);
+          element["Poorest 20%"] = poorest === "-" ? 0 : parseInt(poorest);
+          element["Richest 20%"] = richest === "-" ? 0 : parseInt(richest);
 
         });
      
 
-        w = 180;
-        h = 120;
+        w = 220;
+        h = 190;
 
         var groups = ["Poorest 20%", "Richest 20%"];
         
-        var cat = d3.scaleBand().range([0, w]).domain(groups).padding([0.3]);
-        var num = d3.scaleLinear().range([h, 0]).domain([0, 100]);
+        var cat = d3.scaleBand().domain(groups).range([0, w]).padding([0.2]);
+        var num = d3.scaleLinear().domain([0, 100]).range([h, 0]);
 
         // Chart 1
 
@@ -104,10 +96,10 @@
 
         firstchart
           .append("text")
-          .attr("class", "cname slot-0")
+          .attr("class", "cname")
           .attr("text-anchor", "middle")
           .attr("x", w / 2)
-          .attr("y", -4);
+          .attr("y",-4);
 
         firstchart
           .append("g")
@@ -121,7 +113,7 @@
 
         secondchart
           .append("text")
-          .attr("class", "cname slot-1")
+          .attr("class", "cname")
           .attr("text-anchor", "middle")
           .attr("x", w / 2)
           .attr("y", -4);
@@ -142,17 +134,20 @@
 
           chart.select(".cname").text(countrylist.Country);
           chart.selectAll(".nodata-note").remove();
-          if (countrylist["Poorest 20%"] == null && countrylist["Richest 20%"] == null) {
+          chart.selectAll(".bar").remove();
+          chart.selectAll(".perctext").remove();
+          if (countrylist["Poorest 20%"] == 0 && countrylist["Richest 20%"] == 0) {
             chart.append("text")
               .attr("class", "nodata-note")
-              .attr("x", w / 2).attr("y", h / 2)
+              .attr("x", w / 2+20).attr("y", h / 2)
               .attr("text-anchor", "middle")
               .text("No data for the richest & poorest 20% in this country");
           }
-
+          let poorest = countrylist["Poorest 20%"];
+          let richest = countrylist["Richest 20%"];
           var results = [
-            { group: "Poorest 20%", c: countrylist["Poorest 20%"] },
-            { group: "Richest 20%", c: countrylist["Richest 20%"] }
+          { group: "Poorest 20%", c: poorest },
+          { group: "Richest 20%", c: richest }
           ];
 
           chart
@@ -161,40 +156,41 @@
             .join("rect")
             .attr("class", "bar")
             .transition()
-            .duration(520)
-            .attr("x", function(z){return cat(z.group)})
-            .attr("y", function (z) {
-              return z.c == null ? h : num(z.c);
+            .duration(535)
+            .attr("x",function(z){return cat(z.group)})
+            .attr("y",function (z) {
+              return z.c == 0 ? h : num(z.c);
             })
             .attr("width", cat.bandwidth())
-            .attr("height", function (d) {
-              return d.c == null ? 0 : h - num(d.c);
+            .attr("height",function (z) {
+              return z.c == 0 ? 0 : num(0) - num(z.c);
             })
-            // color scheme A : one colour per country
-            .style("fill", function (d) {
-              return slotColors[slotIdx];
-            });
 
-            // color B: lighter vs darker
-            // .style("fill", function (d) {
-            //   if (slotIdx === 0) return d.group === "Poorest 20%" ? "#ffcc80" : "#ef6c00";
-            //   return                     d.group === "Poorest 20%" ? "#9fa8da" : "#283593";
-            // });
+            chart.selectAll(".perctext")
+            .attr("class","perctext")
+            .data(results)
+            .join("text")
+            .transition().duration(625)
+            .text(z =>z.c+"%")
+            .attr("x", z=> cat(z.group) + cat.bandwidth()/2)
+            .attr("y", z => (z.c == 0 ? num(0) : num(z.c)) + 15)
+            .attr("text-anchor", "middle")
+            .style("font-family", "sans-serif")
+            .style("font-size", 14)
+            .style("fill", "white");
 
         }
 
-        // Clear a chart back to an empty (axes-only) state when its slot is unused
+
         function clearChart(chart) {
-          chart.select(".cname").text("");
-          chart.selectAll(".bar").remove();
           chart.selectAll(".nodata-note").remove();
         }
 
         // Redraw both charts whenever the map selection changes
-        function redrawFromSelection(names) {
+        function redraw(names) {
           var hasAny = names && names.length > 0;
-          d3.select("#empty-msg").style("display", hasAny ? "none" : null);
-          d3.select("#div1")    .style("display", hasAny ? null : "none");
+          d3.select("#empty").style("display", hasAny ? "none" : null);
+          d3.select("#div1") .style("display", hasAny ? null : "none");
 
           if (names[0]) updategraph(names[0], firstchart,  0); else clearChart(firstchart);
           if (names[1]) updategraph(names[1], secondchart, 1); else clearChart(secondchart);
@@ -206,7 +202,7 @@
         // Listen for the cross-iframe sync event relayed by index.html.
         window.addEventListener("syncCountries", function (e) {
           var names = (e.detail && e.detail.names) || [];
-          redrawFromSelection(names);
+          redraw(names);
         });
         
 

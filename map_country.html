@@ -67,7 +67,7 @@
 			width: 100%;
 			height: 100%;
 			display: block;
-			background: #eaf2f7;
+			background: white;
 		}
 
 		html, body, #map-wrap { height: 100%; }
@@ -182,6 +182,9 @@
 			padding: 0;
 			cursor: pointer;
 		}
+		#population{
+    display: none;
+}
 		.zoom-controls button:hover  { background: #e8e8e8; }
 		.zoom-controls button:active { background: #ddd; }
 		.legend h5 {
@@ -204,7 +207,7 @@
 
 <body>
 	<div class="controls">
-		<fieldset>
+		<fieldset id="population">
 			<legend>Population metric</legend>
 			<label><input type="radio" name="size" value="pop_u5" checked> Under-5</label>
 			<label><input type="radio" name="size" value="pop_total"> Total</label>
