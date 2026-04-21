@@ -32,9 +32,11 @@
       }
       
       #svg1 {fill:#ff9800; 
+        
       }
       #svg2 { fill:#3f51b5;
        }
+      
       
       .cname        {
          font-size: 19px;
@@ -125,7 +127,7 @@
         secondchart.append("g").call(d3.axisLeft(num));
 
      
-        function updategraph(name, chart, slotIdx) {
+        function updategraph(name, chart, col) {
           var field = myData.filter(function (d) {
             return d.Country == name;
           });
@@ -149,6 +151,7 @@
           { group: "Poorest 20%", c: poorest },
           { group: "Richest 20%", c: richest }
           ];
+          chart.selectAll(".perctext").remove();
 
           chart
             .selectAll(".bar")
@@ -156,6 +159,11 @@
             .join("rect")
             .attr("class", "bar")
             .transition()
+            .attr("fill", col === 0 ? "#ff9800" : "#3f51b5")
+            .attr("stroke", col === 0 ? "#ff9800" : "#3f51b5")
+            .attr("fill-opacity", 0.3)
+            .attr("stroke-opacity", 1.0)
+            .attr("stroke-width", 2)
             .duration(535)
             .attr("x",function(z){return cat(z.group)})
             .attr("y",function (z) {
@@ -167,23 +175,28 @@
             })
 
             chart.selectAll(".perctext")
-            .attr("class","perctext")
+            
             .data(results)
             .join("text")
-            .transition().duration(625)
+            .attr("class","perctext")
+            .transition()
+            .duration(535)
             .text(z =>z.c+"%")
             .attr("x", z=> cat(z.group) + cat.bandwidth()/2)
             .attr("y", z => (z.c == 0 ? num(0) : num(z.c)) + 15)
             .attr("text-anchor", "middle")
             .style("font-family", "sans-serif")
             .style("font-size", 14)
-            .style("fill", "white");
+            .style("fill", "black")
+            .style("font-weight", "bold  ");
 
         }
 
 
         function clearChart(chart) {
           chart.selectAll(".nodata-note").remove();
+          chart.selectAll(".bar").remove();
+          chart.selectAll(".perctext").remove();
         }
 
         // Redraw both charts whenever the map selection changes
