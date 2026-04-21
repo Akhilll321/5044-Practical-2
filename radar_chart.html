@@ -5,14 +5,21 @@
         <style>
             body {
                 font-family: sans-serif;
-                font-size: 18px;
-		    }
+                font-size: 14px;
+                margin: 0;
+                padding: 6px;
+            }
+            svg {
+                display: block;
+                width: 100%;
+                height: calc(100vh - 14px);
+            }
 
         </style>
     </head>
 
     <body>
-        <h2>Radar Chart</h2>
+        <svg viewBox="-100 -100 760 760" preserveAspectRatio="xMidYMid meet"></svg>
 
         <script>
             let allData = [];
@@ -28,13 +35,7 @@
             // Responsive svg view
             let width = 600;
             let height = 600;
-            let svg = d3.select("body")
-                .append("svg")
-                .attr("width", "30%") 
-                .attr("height", "30%")
-                .attr("viewBox", "-100 -100 760 760")
-                .style("min-width", "350px") 
-                .style("min-height", "350px");
+            let svg = d3.select("svg");
 
             // Plot the grid lines
             let radialScale = d3.scaleLinear()
@@ -69,7 +70,7 @@
                 );
             
             // Function to convert angle to coordinate
-            function angleToCoordinate(angle, value){
+            function angleToCoordinate(angle, value) {
                 let x = Math.cos(angle) * radialScale(value);
                 let y = Math.sin(angle) * radialScale(value);
                 return {"x": width / 2 + x, "y": height / 2 - y};
@@ -100,7 +101,7 @@
                 .attr("y1", height / 2)
                 .attr("x2", d => d.line_coord.x)
                 .attr("y2", d => d.line_coord.y)
-                .attr("stroke","black")
+                .attr("stroke", "black");
 
             // Draw axis label
             svg.selectAll(".axislabel")
@@ -111,7 +112,7 @@
                 .text((d, i) => featureLabels[i])
                 .attr("text-anchor", "middle")
                 .style("font-size", "18px");
-            let colors = ["orange", "red", "darkblue"];
+            let colors = ["#ff9800", "#3f51b5"];//color alignment
 
             function getPathCoordinates(data_point){
                 let coordinates = [];
@@ -145,10 +146,10 @@
                         .datum(coordinates)
                         .attr("d", line)
                         .attr("stroke-width", 4)
-                        .attr("stroke", (_, i) => color)
-                        .attr("fill", (_, i) => color)
+                        .attr("stroke", color)
+                        .attr("fill", color)
                         .attr("stroke-opacity", 1)
-                        .attr("fill-opacity", 0.3)
+                        .attr("fill-opacity", 0.3);
 
                 // Draw points
                     coordinates.forEach(coord => {
@@ -162,16 +163,16 @@
                 svg.selectAll(".grid-circle").raise();
             }
             // Load CSV and create dropdown menu
-            d3.csv("/data/final_new.csv").then(function(csvData) {
-                allData = csvData;      
-            
-            // Add first country
-            if (allData.length > 0) {
-                selectedCountries.push(allData[0].Country);
-                menu.property("value", allData[0].Country);
+            d3.csv("data/final_new3.csv").then(function(csvData) {
+                allData = csvData;  
                 updateRadar();
-            }
+            });    
             
-        });
+            // Receive selected countries from the map (relayed by index.html)
+            window.addEventListener("syncCountries", (e) => {
+                selectedCountries = (e.detail && e.detail.names) || [];
+                updateRadar();
+            });
+            
     </script>
 </html>
