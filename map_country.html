@@ -80,12 +80,20 @@
 			transition: stroke-width .1s, stroke .1s, opacity .25s;
 		}
 		.country:hover        { stroke: #111;    stroke-width: 1.2px; }
-		.country.selected-0   { stroke: #ff9800; stroke-width: 2.4px; }
-		.country.selected-1   { stroke: #3f51b5; stroke-width: 2.4px; }
+		/* Selected borders get a 1px white halo via drop-shadow so the stroke
+		   stays legible against any choropleth fill */
+		.country.selected-0,
+		.country.selected-1 {
+			stroke-width: 2.4px;
+			paint-order: stroke;
+			filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff);
+		}
+		.country.selected-0   { stroke: #ff9800; }
+		.country.selected-1   { stroke: #3f51b5; }
 		.country.dimmed       { opacity: .28; }
 		.country.dimmed:hover { opacity: .7; }
 
-		/* Countries without breastfeeding data: greyed, not clickable visually. */
+		/* Countries without breastfeeding data: greyed, not clickable visually */
 		.country.no-data        { cursor: not-allowed; }
 		.country.no-data:hover  { stroke: #999; stroke-width: .8px; }
 
@@ -334,7 +342,7 @@
 			const bfMin = Math.floor(d3.min(bfAllVals) / 5) * 5;
 			const bfMax = Math.ceil (d3.max(bfAllVals) / 5) * 5;
 
-			const colorScale = d3.scaleSequential(t => d3.interpolateBlues(0.22 + 0.76 * t))
+			const colorScale = d3.scaleSequential(t => d3.interpolateGreens(0.22 + 0.76 * t))
 				.domain([bfMin, bfMax]);
 
 			// mortality scale for tooltip mini bubble chart
@@ -522,7 +530,6 @@
 			};
 
 			// build the mini child-mortality bubble block shown inside the tooltip
-			// (adapted from comparison_chart.html — Global avg vs this country)
 			const mortBlock = (rec) => {
 				if (!rec || rec.infant_mortality == null) return "";
 				const v = rec.infant_mortality;
