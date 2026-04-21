@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>SOWC 2025 — Dashboard</title>
+
+	<style>
+		:root {
+			--bg:     #fafafa;
+			--ink:    #222;
+			--muted:  #666;
+			--panel:  #fff;
+			--accent: #ff9800;
+			--accent2:#3f51b5;
+			--border: #eaeaea;
+		}
+
+		html, body {
+			margin: 0;
+			padding: 0;
+			font-family: -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
+			background: var(--bg);
+			color: var(--ink);
+		}
+
+		header {
+			padding: 14px 22px 12px 22px;
+			border-bottom: 1px solid var(--border);
+			background: var(--panel);
+		}
+		header h1 { margin: 0 0 4px 0; font-size: 20px; }
+		header p  { margin: 0; color: var(--muted); font-size: 13px; max-width: 1100px; line-height: 1.45; }
+		header .legend-chip {
+			display: inline-block;
+			width: 10px; height: 10px;
+			border-radius: 50%;
+			vertical-align: middle;
+			margin: 0 3px 0 8px;
+		}
+		.chip-a { background: var(--accent); }
+		.chip-b { background: var(--accent2); }
+
+		.grid {
+			display: flex;
+			gap: 12px;
+			padding: 12px;
+			box-sizing: border-box;
+			align-items: flex-start;
+		}
+		.col-left  { flex: 1.25 1 0; min-width: 720px; }
+		.col-right {
+			flex: 1 1 0;
+			min-width: 520px;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+		}
+
+		.panel {
+			background: var(--panel);
+			border: 1px solid var(--border);
+			border-radius: 6px;
+			overflow: hidden;
+			position: relative;
+		}
+		.panel-title {
+			position: absolute;
+			top: 6px;
+			left: 10px;
+			font-size: 11px;
+			color: var(--muted);
+			text-transform: uppercase;
+			letter-spacing: .6px;
+			pointer-events: none;
+			z-index: 1;
+		}
+
+		/* Left map ≈ right (radar + gap + bar) so the two columns line up. */
+		.panel.map   { height: 820px; }
+		.panel.radar { height: 404px; }
+		.panel.bar   { height: 404px; }
+
+		iframe {
+			width: 100%;
+			height: 100%;
+			border: 0;
+			display: block;
+		}
+
+		@media (max-width: 1280px) {
+			.grid { flex-direction: column; }
+			.col-left, .col-right { flex: none; width: 100%; min-width: 0; }
+		}
+
+		/* Interaction guide block that sits below the entire dashboard */
+		.interaction-guide {
+			margin: 4px 12px 18px 12px;
+			padding: 14px 18px;
+			background: var(--panel);
+			border: 1px solid var(--border);
+			border-radius: 6px;
+			color: var(--ink);
+			font-size: 13px;
+			line-height: 1.55;
+		}
+		.interaction-guide h3 {
+			margin: 0 0 8px 0;
+			font-size: 13px;
+			text-transform: uppercase;
+			letter-spacing: .6px;
+			color: var(--muted);
+		}
+		.interaction-guide ul {
+			margin: 0;
+			padding-left: 18px;
+		}
+		.interaction-guide li { margin-bottom: 4px; }
+		.interaction-guide code {
+			background: #f2f2f2;
+			border: 1px solid #e0e0e0;
+			border-radius: 3px;
+			padding: 0 4px;
+			font-size: 12px;
+		}
+		.interaction-guide .swatch {
+			display: inline-block;
+			width: 10px; height: 10px;
+			border-radius: 50%;
+			vertical-align: middle;
+			margin: 0 3px 0 2px;
+		}
+</style>
+</head>
+
+<body>
+	<header>
+		<h1>SOWC 2025 — Children &amp; Inequality</h1>
+		<p>
+			[Some text here]
+			Click up to two countries on the map to compare them across maternal context and adolescent
+			learning &mdash; country 1 is shown in
+			<span class="legend-chip chip-a"></span><b>orange</b>,
+			country 2 in
+			<span class="legend-chip chip-b"></span><b>indigo</b>.
+			Countries without breastfeeding data are greyed out and cannot be selected.
+		</p>
+	</header>
+
+	<div class="grid">
+		<div class="col-left">
+			<div class="panel map">
+				<span class="panel-title">Global Map</span>
+				<iframe id="f-map"   src="map_country.html"></iframe>
+			</div>
+		</div>
+		<div class="col-right">
+			<div class="panel radar">
+				<span class="panel-title">Maternal &amp; Gender Radar</span>
+				<iframe id="f-radar" src="radar_chart.html"></iframe>
+			</div>
+			<div class="panel bar">
+				<span class="panel-title">Adolescent Education — Poorest vs Richest</span>
+				<iframe id="f-bar"   src="facetedbar.html"></iframe>
+			</div>
+		</div>
+	</div>
+
+	<!-- Interaction guide sitting below the full dashboard grid -->
+	<section class="interaction-guide" aria-label="How to interact">
+		<h3>How to interact</h3>
+		<ul>
+			<li>
+				<b>Select countries.</b> Click a country on the map to pin it; click again to
+				un-pin. Up to two countries can be compared at once — the first appears in
+				<span class="swatch" style="background:#ff9800;"></span><b>orange</b>
+				and the second in
+				<span class="swatch" style="background:#3f51b5;"></span><b>indigo</b>.
+				This colour convention is shared across the map, radar and bar chart.
+			</li>
+			<li>
+				<b>Countries without breastfeeding data</b> are shaded grey and cannot be
+				selected — hovering still shows their tooltip (marked "No breastfeeding data").
+			</li>
+			<li>
+				<b>Population overlay.</b> Use <i>Population metric</i> to switch between
+				under-5 population, total population, or the "not-continuing BF" deficit.
+				Use <i>Display style</i> to render it as a pictogram, bubble, or hide it
+				entirely. For pictograms, <i>Icon unit</i> controls how many people each
+				figure represents.
+			</li>
+			<li>
+				<b>Linked views.</b> Some text here
+			</li>
+		</ul>
+	</section>
+
+	<script>
+		const frames = {
+			map:   document.getElementById("f-map"),
+			radar: document.getElementById("f-radar"),
+			bar:   document.getElementById("f-bar")
+		};
+
+		const relay = (names) => {
+			[frames.radar, frames.bar].forEach(fr => {
+				const w = fr.contentWindow;
+				if (!w) return;
+				w.dispatchEvent(new CustomEvent("syncCountries", { detail: { names } }));
+			});
+		};
+
+		frames.map.addEventListener("load", () => {
+			frames.map.contentWindow.addEventListener("countrySelected", (e) => {
+				relay((e.detail && e.detail.countries) || []);
+			});
+		});
+	</script>
+</body>
+
+</html>
