@@ -5,16 +5,21 @@
 
     <title>Breastfeeding rates among richest and poorest 20%</title>
 
-    
     <style>
       body,
       html {
         margin: 0;
-        padding: 20px;
+        padding: 10px;
         font-family: sans-serif;
         display: flex;
         flex-direction: column;
         align-items: center;
+        overflow: hidden;
+      }
+      h2 {
+        font-size: 14px;
+        margin: 10px 0 4px 0;
+        text-align: center;
       }
       #div1 {
         display: flex;
@@ -23,131 +28,135 @@
         justify-content: center;
         align-items: flex-start;
         width: 100%;
-        gap: 20px;
-      }
-      #div2 {
-        display: flex;
-        justify-content: space-around;
-        width: 1200px;
-        margin-top: 10px;
-      }
-
-      select {
-        padding: 5px;
-        font-size: 14px;
+        gap: 10px;
+      
       }
 
       svg {
-        border: 1px ;
-        padding-left: 62px;
-        padding-top: 31px;
-        padding-bottom: 52px;
-        padding-right: 31px;
+        padding-left: 42px;
+        padding-top: 18px;
+        padding-bottom: 30px;
+        padding-right: 18px;
         overflow: visible;
+      }
+      
+      /*color consistency*/
+      .cname        { font-size: 12px; font-weight: bold; }
+      .cname.slot-0 { fill: #ff9800; } 
+      .cname.slot-1 { fill: #3f51b5; }
+
+      .nodata-note {
+        font-size: 10px;
+        fill: #999;
+        font-style: italic;
+      }
+
+      .empty-msg {
+        color: #999;
+        font-size: 12px;
+        text-align: center;
+        margin-top: 80px;
       }
     </style>
   </head>
 
   <body>
-    <h2>Comparing adoloscent education between countries</h2>
+    <h2>Comparing adolescent education between countries</h2>
 
-    <div id="div1">
-      <svg id="svg1" width="450" height="400"></svg>
-      <svg id="svg2" width="450" height="400"></svg>
-      
+     <div id="empty-msg" class="empty-msg">Click one or two countries on the map to see its Poorest-vs-Richest comparison.</div>
+
+    <div id="div1" style="display:none;">
+      <svg id="svg1" width="340" height="300" viewBox="0 0 340 300" preserveAspectRatio="xMidYMid meet"></svg>
+      <svg id="svg2" width="340" height="300" viewBox="0 0 340 300" preserveAspectRatio="xMidYMid meet"></svg>
+    
     </div>
+
 
     <script>
       var dataPath = "data/final_new3.csv";
 
+      // country-level colours matching the map (slot 0 = orange, slot 1 = indigo)
+      var slotColors = ["#ff9800", "#3f51b5"];
+
       d3.csv(dataPath).then(function (myData) {
-        //Data cleaning
+        // Data cleaning
         myData.forEach((element) => {
           let poorest = element["Poorest 20%"];
           let richest = element["Richest 20%"];
-          element["Poorest 20%"] = poorest === "-" ? 0 : parseInt(poorest);
-          element["Richest 20%"] = richest === "-" ? 0 : parseInt(richest);
+          element["Poorest 20%"] = poorest === "-" ? null : parseInt(poorest);
+          element["Richest 20%"] = richest === "-" ? null : parseInt(richest);
 
         });
-
      
 
-        w = 380;
-        h = 300;
+        w = 240;
+        h = 200;
 
-        
         var groups = ["Poorest 20%", "Richest 20%"];
         
         var cat = d3.scaleBand().range([0, w]).domain(groups).padding([0.3]);
         var num = d3.scaleLinear().range([h, 0]).domain([0, 100]);
 
-    
+        // Chart 1
 
         var svgone = d3.select("#svg1");
         var firstchart = svgone.append("g");
 
         firstchart
-          .append("g")
-          .selectAll("text")
-          .join("text")
-          .text((d) => d)
-          .attr("class", "cname")
+          .append("text")
+          .attr("class", "cname slot-0")
           .attr("text-anchor", "middle")
-          .style("font-weight", "bold")
           .attr("x", w / 2)
-          .attr("y",-10);
+          .attr("y", -4);
 
         firstchart
           .append("g")
           .attr("transform", `translate(0, ${h})`)
-          .call(d3.axisBottom(cat))
-          .selectAll("text")
+          .call(d3.axisBottom(cat));
         firstchart.append("g").call(d3.axisLeft(num));
 
-       
+        // Chart 2
         var svgtwo = d3.select("#svg2");
         var secondchart = svgtwo.append("g");
 
         secondchart
-          .append("g")
-          .selectAll("text")
-          .join("text")
-          .text((d) => d)
-          .attr("class", "cname")
+          .append("text")
+          .attr("class", "cname slot-1")
           .attr("text-anchor", "middle")
-          .style("font-weight", "bold")
           .attr("x", w / 2)
-          .attr("y", -10);
+          .attr("y", -4);
 
         secondchart
           .append("g")
           .attr("transform", `translate(0, ${h})`)
-          .call(d3.axisBottom(cat))
-          .selectAll("text")
+          .call(d3.axisBottom(cat));
         secondchart.append("g").call(d3.axisLeft(num));
 
      
-        function updategraph(name, chart) {
+        function updategraph(name, chart, slotIdx) {
           var field = myData.filter(function (d) {
-            return d.Countries == name;
+            return d.Country == name;
           });
           var countrylist = field[0];
-          chart.select(".cname").text(countrylist.Countries);
-         if(countrylist["Poorest 20%"]===0){
-          alert("No data available for the poorest 20% for this country ")
-         }
-         if(countrylist["Richest 20%"]===0){
-          alert("No data available for the richest 20% for this country")
-         }
+          if (!countrylist) return;
+
+          chart.select(".cname").text(countrylist.Country);
+          chart.selectAll(".nodata-note").remove();
+          if (countrylist["Poorest 20%"] == null && countrylist["Richest 20%"] == null) {
+            chart.append("text")
+              .attr("class", "nodata-note")
+              .attr("x", w / 2).attr("y", h / 2)
+              .attr("text-anchor", "middle")
+              .text("No education data for this country");
+          }
 
           var results = [
-            {
-               group: "Poorest 20%", c: countrylist["Poorest 20%"]},
-               {group:"Richest 20%", c: countrylist["Richest 20%"]}
+            { group: "Poorest 20%", c: countrylist["Poorest 20%"] },
+            { group: "Richest 20%", c: countrylist["Richest 20%"] }
           ];
 
           var bars = chart
-            .selectAll("cgrp")
+            .selectAll(".cgrp")
             .data(groups)
             .join("g")
             .attr("class", "cgrp")
@@ -167,22 +176,53 @@
             .attr("class", "bar")
             .transition()
             .duration(520)
-            .attr("x",0)
+            .attr("x", 0)
             .attr("y", function (d) {
-              return num(d.c);
+              return d.c == null ? h : num(d.c);
             })
             .attr("width", cat.bandwidth())
             .attr("height", function (d) {
-              return h - num(d.c);
+              return d.c == null ? 0 : h - num(d.c);
             })
-            .style("fill",function(d) {
-              if (d.group === "Poorest 20%") {
-                return "orange";
-              } else {
-                return "blue";
-              }
+            // color scheme A : one colour per country
+            .style("fill", function (d) {
+              return slotColors[slotIdx];
             });
+
+            // color B: lighter vs darker
+            // .style("fill", function (d) {
+            //   if (slotIdx === 0) return d.group === "Poorest 20%" ? "#ffcc80" : "#ef6c00";
+            //   return                     d.group === "Poorest 20%" ? "#9fa8da" : "#283593";
+            // });
+
         }
+
+        // Clear a chart back to an empty (axes-only) state when its slot is unused
+        function clearChart(chart) {
+          chart.select(".cname").text("");
+          chart.selectAll(".cgrp").remove();
+          chart.selectAll(".nodata-note").remove();
+        }
+
+        // Redraw both charts whenever the map selection changes
+        function redrawFromSelection(names) {
+          var hasAny = names && names.length > 0;
+          d3.select("#empty-msg").style("display", hasAny ? "none" : null);
+          d3.select("#div1")    .style("display", hasAny ? null : "none");
+
+          if (names[0]) updategraph(names[0], firstchart,  0); else clearChart(firstchart);
+          if (names[1]) updategraph(names[1], secondchart, 1); else clearChart(secondchart);
+
+          // Hide svg2 entirely when only one country is selected
+          d3.select("#svg2").style("display", names[1] ? null : "none");
+        }
+
+        // Listen for the cross-iframe sync event relayed by index.html.
+        window.addEventListener("syncCountries", function (e) {
+          var names = (e.detail && e.detail.names) || [];
+          redrawFromSelection(names);
+        });
+        
 
       });
     </script>
