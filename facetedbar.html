@@ -66,8 +66,8 @@
      <div id="empty-msg" class="empty-msg">Click one or two countries on the map to see its Poorest-vs-Richest comparison.</div>
 
     <div id="div1" style="display:none;">
-      <svg id="svg1" width="340" height="300" viewBox="0 0 340 300" preserveAspectRatio="xMidYMid meet"></svg>
-      <svg id="svg2" width="340" height="300" viewBox="0 0 340 300" preserveAspectRatio="xMidYMid meet"></svg>
+      <svg id="svg1" width="240" height="180" viewBox="0 0 240 180" preserveAspectRatio="xMidYMid meet"></svg>
+      <svg id="svg2" width="240" height="180" viewBox="0 0 240 180" preserveAspectRatio="xMidYMid meet"></svg>
     
     </div>
 
@@ -89,8 +89,8 @@
         });
      
 
-        w = 240;
-        h = 200;
+        w = 180;
+        h = 120;
 
         var groups = ["Poorest 20%", "Richest 20%"];
         
@@ -155,30 +155,16 @@
             { group: "Richest 20%", c: countrylist["Richest 20%"] }
           ];
 
-          var bars = chart
-            .selectAll(".cgrp")
-            .data(groups)
-            .join("g")
-            .attr("class", "cgrp")
-            .attr("transform", function (g) {
-              return "translate(" + cat(g) + ",0)";
-            });
-
-           
-
-          bars.selectAll(".bar").data(function (subname) {
-            return results.filter(function (j) {
-              return j.group === subname;
-            });
-          })
-
+          chart
+            .selectAll(".bar")
+            .data(results)
             .join("rect")
             .attr("class", "bar")
             .transition()
             .duration(520)
-            .attr("x", 0)
-            .attr("y", function (d) {
-              return d.c == null ? h : num(d.c);
+            .attr("x", function(z){return cat(z.group)})
+            .attr("y", function (z) {
+              return z.c == null ? h : num(z.c);
             })
             .attr("width", cat.bandwidth())
             .attr("height", function (d) {
@@ -200,7 +186,7 @@
         // Clear a chart back to an empty (axes-only) state when its slot is unused
         function clearChart(chart) {
           chart.select(".cname").text("");
-          chart.selectAll(".cgrp").remove();
+          chart.selectAll(".bar").remove();
           chart.selectAll(".nodata-note").remove();
         }
 
@@ -209,6 +195,8 @@
           var hasAny = names && names.length > 0;
           d3.select("#empty-msg").style("display", hasAny ? "none" : null);
           d3.select("#div1")    .style("display", hasAny ? null : "none");
+
+          d3.select("#div1").style("flex-direction", names.length > 1 ? "column" : "row");
 
           if (names[0]) updategraph(names[0], firstchart,  0); else clearChart(firstchart);
           if (names[1]) updategraph(names[1], secondchart, 1); else clearChart(secondchart);
