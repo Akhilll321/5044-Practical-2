@@ -22,34 +22,29 @@
 			color: var(--ink);
 		}
 
-		header { padding: 16px 24px 8px 24px; }
-		header h1 { margin: 0 0 4px 0; font-size: 20px; }
-		header p  { margin: 0; color: var(--muted); font-size: 13px; max-width: 900px; }
-
 		.controls {
 			display: flex;
-			gap: 24px;
+			gap: 14px;
 			align-items: center;
-			padding: 10px 24px;
+			padding: 8px 14px;
 			background: var(--panel);
-			border-top: 1px solid #eee;
 			border-bottom: 1px solid #eee;
 			flex-wrap: wrap;
 		}
 		.controls fieldset {
 			border: 1px solid #ddd;
 			border-radius: 6px;
-			padding: 6px 12px;
+			padding: 4px 10px;
 			margin: 0;
 		}
 		.controls legend {
-			font-size: 11px;
+			font-size: 10px;
 			color: var(--muted);
 			text-transform: uppercase;
 			letter-spacing: .5px;
 			padding: 0 4px;
 		}
-		.controls label { font-size: 13px; margin-right: 10px; cursor: pointer; }
+		.controls label { font-size: 12px; margin-right: 8px; cursor: pointer; }
 		.controls input[type=radio] { vertical-align: middle; margin-right: 3px; }
 
 		#reset-btn {
@@ -65,8 +60,8 @@
 		#map-wrap {
 			position: relative;
 			width: 100%;
-			height: calc(100vh - 150px);
-			min-height: 520px;
+			height: calc(100% - 52px);
+			min-height: 460px;
 		}
 		svg#map {
 			width: 100%;
@@ -74,6 +69,9 @@
 			display: block;
 			background: #eaf2f7;
 		}
+
+		html, body, #map-wrap { height: 100%; }
+		body { display: flex; flex-direction: column; }
 
 		.country {
 			stroke: #fff;
@@ -87,15 +85,15 @@
 		.country.dimmed       { opacity: .28; }
 		.country.dimmed:hover { opacity: .7; }
 
+		/* Countries without breastfeeding data: greyed, not clickable visually. */
+		.country.no-data        { cursor: not-allowed; }
+		.country.no-data:hover  { stroke: #999; stroke-width: .8px; }
+
 		.bubble               { fill: #1a1a1a; fill-opacity: .06; stroke: #1a1a1a; stroke-opacity: .7; stroke-width: .7px; pointer-events: none; transition: opacity .25s; }
 		.bubble.selected-0    { fill: #ff9800; fill-opacity: .55; stroke: #c57600; stroke-opacity: .95; stroke-width: 1.3px; }
 		.bubble.selected-1    { fill: #3f51b5; fill-opacity: .55; stroke: #1a237e; stroke-opacity: .95; stroke-width: 1.3px; }
 		.bubble.dimmed        { opacity: .25; }
 
-		/* Pictograms stay dark on selected countries too — one per 200k people
-		   means 200+ icons inside India, and a coloured fill at high opacity
-		   would blur them into a single solid blob. Selection is conveyed by
-		   the country outline + dimming the rest of the map. */
 		.person               { fill: #1a1a1a; fill-opacity: .38; pointer-events: none; transition: opacity .25s; }
 		.person.dimmed        { opacity: .3; }
 
@@ -108,29 +106,52 @@
 			padding: 8px 10px;
 			font-size: 12px;
 			box-shadow: 0 4px 14px rgba(0, 0, 0, .12);
-			max-width: 260px;
+			max-width: 240px;
 			line-height: 1.35;
 			transition: opacity .1s;
 		}
 		.tooltip h4 { margin: 0 0 4px 0; font-size: 13px; }
 		.tooltip .row { display: flex; justify-content: space-between; gap: 12px; }
 		.tooltip .row span:last-child { font-variant-numeric: tabular-nums; }
+		.tooltip .no-bf {
+			margin-top: 4px;
+			padding: 3px 6px;
+			background: #f2f2f2;
+			border-radius: 3px;
+			color: #777;
+			font-style: italic;
+			text-align: center;
+			font-size: 11px;
+		}
+		.tooltip .mort-block {
+			margin-top: 8px;
+			padding-top: 6px;
+			border-top: 1px dashed #ddd;
+		}
+		.tooltip .mort-title {
+			font-size: 10px;
+			text-transform: uppercase;
+			letter-spacing: .4px;
+			color: var(--muted);
+			margin-bottom: 2px;
+		}
+		.tooltip .mort-svg text { font-size: 9px; fill: #444; }
 
 		.legend {
 			position: absolute;
-			left: 16px;
-			bottom: 16px;
+			left: 14px;
+			bottom: 14px;
 			background: rgba(255, 255, 255, .94);
 			border: 1px solid #ddd;
 			border-radius: 6px;
-			padding: 10px 12px;
+			padding: 8px 10px;
 			font-size: 11px;
 		}
 
 		.zoom-controls {
 			position: absolute;
-			right: 16px;
-			top: 16px;
+			right: 14px;
+			top: 14px;
 			display: flex;
 			flex-direction: column;
 			gap: 3px;
@@ -141,12 +162,12 @@
 			box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
 		}
 		.zoom-controls button {
-			width: 28px;
-			height: 28px;
+			width: 26px;
+			height: 26px;
 			background: #fff;
 			border: 1px solid #ccc;
 			border-radius: 4px;
-			font-size: 15px;
+			font-size: 14px;
 			font-weight: 600;
 			color: #333;
 			line-height: 1;
@@ -162,9 +183,9 @@
 			letter-spacing: .4px;
 			color: var(--muted);
 		}
-		.legend .color-bar { display: flex; height: 12px; width: 220px; margin-bottom: 4px; border-radius: 2px; overflow: hidden; }
+		.legend .color-bar { display: flex; height: 12px; width: 200px; margin-bottom: 4px; border-radius: 2px; overflow: hidden; }
 		.legend .color-bar div { flex: 1; }
-		.legend .ticks { display: flex; justify-content: space-between; width: 220px; color: var(--muted); font-variant-numeric: tabular-nums; }
+		.legend .ticks { display: flex; justify-content: space-between; width: 200px; color: var(--muted); font-variant-numeric: tabular-nums; }
 		.legend-size { margin-top: 10px; display: flex; align-items: flex-end; gap: 10px; }
 		.legend-size svg { overflow: visible; }
 		.legend-size text { font-size: 10px; fill: var(--muted); }
@@ -174,22 +195,7 @@
 </head>
 
 <body>
-	<header>
-		<h1>RQ?</h1>
-		<p>Each country is shaded by the share of children aged 12&ndash;23 months who are still being breastfed.
-		   Pictograms on top of each country represent its under-5 population (1 icon = N people). Use the filter
-		   to compare the <b>poorest 20%</b> and <b>richest 20%</b> wealth quintiles, or switch to the
-		   <b>Gap</b> view to see inequality directly. Click a country to [see other two views].</p>
-	</header>
-
 	<div class="controls">
-		<fieldset>
-			<legend>Continued breastfeeding (12&ndash;23m) &mdash; colour</legend>
-			<label><input type="radio" name="quintile" value="continued_all" checked> All children</label>
-			<label><input type="radio" name="quintile" value="continued_poorest"> Poorest 20%</label>
-			<label><input type="radio" name="quintile" value="continued_richest"> Richest 20%</label>
-			<label><input type="radio" name="quintile" value="gap"> Gap (Rich &minus; Poor)</label>
-		</fieldset>
 		<fieldset>
 			<legend>Population metric</legend>
 			<label><input type="radio" name="size" value="pop_u5" checked> Under-5</label>
@@ -216,7 +222,6 @@
 		<span id="selected-label" style="font-size:12px;color:var(--muted);"></span>
 	</div>
 
-	
 	<div id="map-wrap">
 		<svg id="map">
 			<defs>
@@ -243,12 +248,11 @@
 			// state
 			const ICON_CAP     = 5500;
 			const MAX_SELECTED = 2;   // up to two countries can be pinned for comparison
-			let currentMetric  = "continued_all";
 			let currentSize    = "pop_u5";
 			let currentStyle   = "pictogram";
 			let iconUnit       = 200000;
-			let selectedNames  = [];  // [] | [a] | [a, b], oldest drops first
-			let skipTransition = false;  // set during resize so layers snap in sync
+			let selectedWA     = [];  // world-atlas names (used for styling); broadcast translates to CSV names
+			let skipTransition = false;
 			const pictoCache   = new Map();
 
 			// svg setup
@@ -272,7 +276,7 @@
 			});
 			svg.call(zoom);
 
-			// map final_new3.csv country names to world-atlas@2 110m names
+			// map CSV country names to world-atlas@2 110m names
 			const nameOverrides = {
 				"The Bahamas": "Bahamas",
 				"The Gambia": "Gambia",
@@ -288,7 +292,7 @@
 				"Kosovo (UNSCR 1244)": "Kosovo",
 				"Netherlands (Kingdom of the)": "Netherlands"
 			};
-			const normalize = (n) => nameOverrides[n] || n;
+			const toWA = (n) => nameOverrides[n] || n;
 
 			// numeric parser — strips thousands separators and treats "-"/"" as null
 			const parseNum = (v) => {
@@ -299,110 +303,47 @@
 				return isNaN(n) ? null : n;
 			};
 
-
-			const finalCols = {
-				country:           0,
-				exclusive_u6m:     7,
-				early_initiation:  8,
-				continued_all:     9,
-				continued_poorest: 10,
-				continued_richest: 11,
-				pop_total:         13,
-				pop_u5:            14
-			};
-			const loadFinalCsv = async (url) => {
-				const txt    = await d3.text(url);
-				const rows   = d3.csvParseRows(txt);
-				if (!rows.length) return [];
-				const header = rows[0].map(h => (h || "").trim().toLowerCase());
-				const findIdx = (...needles) => {
-					for (let i = 0; i < header.length; i++) {
-						if (needles.every(n => header[i].includes(n))) return i;
-					}
-					return -1;
-				};
-
-				const resolve = (key, ...needles) => {
-					const idx = findIdx(...needles);
-					if (idx >= 0) finalCols[key] = idx;
-				};
-				resolve("country",           "country");
-				resolve("exclusive_u6m",     "exclusive");
-				resolve("early_initiation",  "early");
-				resolve("continued_all",     "continued", "all");
-				resolve("continued_poorest", "poorest");
-				resolve("continued_richest", "richest");
-				resolve("pop_total",         "total");
-				resolve("pop_u5",            "under");
-
-				const out = [];
-				for (let i = 1; i < rows.length; i++) {
-					const name = (rows[i][finalCols.country] || "").trim();
-					if (!name) continue;
-					out.push(rows[i]);
-				}
-				return out;
-			};
-
-			const [world, t9Rows] = await Promise.all([
+			// load CSV with direct named-column access (matches teammate style)
+			const [world, rowsRaw] = await Promise.all([
 				d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"),
-				loadFinalCsv("data/final_new3.csv")
+				d3.csv("data/final_new3.csv")
 			]);
 
-			const sowc = t9Rows.map((r) => {
-				const key = (r[finalCols.country] || "").trim();
-				return {
-					country:           key,
-					pop_total:         parseNum(r[finalCols.pop_total]),
-					pop_u5:            parseNum(r[finalCols.pop_u5]),
-					early_initiation:  parseNum(r[finalCols.early_initiation]),
-					exclusive_u6m:     parseNum(r[finalCols.exclusive_u6m]),
-					continued_all:     parseNum(r[finalCols.continued_all]),
-					continued_poorest: parseNum(r[finalCols.continued_poorest]),
-					continued_richest: parseNum(r[finalCols.continued_richest])
-				};
-			});
+			const sowc = rowsRaw
+				.map(d => ({
+					country:           (d.Country || "").trim(),
+					exclusive_u6m:     parseNum(d["Exclusive breastfeeding (<6 months) (%)"]),
+					early_initiation:  parseNum(d["Early initiation of breastfeeding (%)"]),
+					continued_all:     parseNum(d["Continued breastfeeding (12–23 months) (%)All children"]),
+					continued_poorest: parseNum(d["Poorest 20%"]),
+					continued_richest: parseNum(d["Richest 20%"]),
+					infant_mortality:  parseNum(d["Infant mortality rate"]),
+					pop_total:         parseNum(d["Total"]),
+					pop_u5:            parseNum(d["Under 5"])
+				}))
+				.filter(d => d.country);
 
-			const byName = new Map(sowc.map(d => [normalize(d.country), d]));
+			// byName keyed by world-atlas name so geo features can look up their CSV record
+			const byName = new Map(sowc.map(d => [toWA(d.country), d]));
 			const countriesGeo = topojson.feature(world, world.objects.countries).features;
 
 			projection.fitSize([W, H * 0.95], { type: "Sphere" });
 
-			// colour scale domain from all BF values
-			const bfAllVals = sowc
-				.flatMap(d => [d.continued_all, d.continued_poorest, d.continued_richest])
-				.filter(v => v != null);
+			// colour scale domain from all BF values (continued_all only)
+			const bfAllVals = sowc.map(d => d.continued_all).filter(v => v != null);
 			const bfMin = Math.floor(d3.min(bfAllVals) / 5) * 5;
 			const bfMax = Math.ceil (d3.max(bfAllVals) / 5) * 5;
 
-			let colorScale;
-			const rebuildColorScale = () => {
-				if (currentMetric === "gap") {
-					// diverging PuOr for gap view
-					// orange = richer BF more, purple = poorer BF more
-					const gapVals = sowc
-						.map(d => (d.continued_richest != null && d.continued_poorest != null)
-							? d.continued_richest - d.continued_poorest : null)
-						.filter(v => v != null);
-					const m = d3.max(gapVals.map(Math.abs)) || 40;
-					colorScale = d3.scaleDiverging(t => d3.interpolatePuOr(1 - t))
-						.domain([-m, 0, m]);
-				} else {
-					// sequential blues, clamp low end so pale values stay visible
-					colorScale = d3.scaleSequential(t => d3.interpolateBlues(0.22 + 0.76 * t))
-						.domain([bfMin, bfMax]);
-				}
-			};
+			const colorScale = d3.scaleSequential(t => d3.interpolateBlues(0.22 + 0.76 * t))
+				.domain([bfMin, bfMax]);
 
-			// accessors
-			const metricValue = (rec) => {
-				if (!rec) return null;
-				if (currentMetric === "gap") {
-					const p = rec.continued_poorest, r = rec.continued_richest;
-					return (p == null || r == null) ? null : r - p;
-				}
-				return rec[currentMetric];
-			};
+			// mortality scale for tooltip mini bubble chart
+			const mortVals = sowc.map(d => d.infant_mortality).filter(v => v != null);
+			const mortAvg  = d3.mean(mortVals);
+			const mortMax  = d3.max(mortVals);
+			const mortScale = d3.scaleSqrt().domain([0, mortMax]).range([0, 22]);
+
+			const metricValue = (rec) => rec ? rec.continued_all : null;
 
 			const sizeValue = (rec) => {
 				if (!rec) return 0;
@@ -413,12 +354,13 @@
 				return rec[currentSize] || 0;
 			};
 
-			// bubble radius: sqrt so area is proportional to population;
 			let sizeScale;
 			const rebuildSizeScale = () => {
 				const vals = sowc.map(sizeValue).filter(v => v > 0);
 				sizeScale = d3.scaleSqrt().domain([0, d3.max(vals)]).range([0, 20]);
 			};
+
+			const hasBFData = (rec) => !!(rec && rec.continued_all != null);
 
 			// render
 			const draw = () => {
@@ -427,8 +369,6 @@
 				applySelection();
 			};
 
-			// draw country paths
-			// use style not attr so CSS cannot override fill
 			const drawChoropleth = () => {
 				gCountries.selectAll("path.country")
 					.data(countriesGeo, d => d.id)
@@ -440,14 +380,13 @@
 							.on("mouseleave", () => hideTooltip())
 							.on("click", (e, d) => toggleSelect(d))
 					)
+					.classed("no-data", d => !hasBFData(byName.get(d.properties.name)))
 					.style("fill", d => {
 						const v = metricValue(byName.get(d.properties.name));
 						return v == null ? "#e6e6e6" : colorScale(v);
 					});
 			};
 
-			// draw population layer
-			// only touched when size or style changes, not on wealth filter
 			const drawPopulation = () => {
 				if (currentStyle === "bubble") {
 					gPictograms.selectAll("*").remove();
@@ -471,8 +410,6 @@
 					return { name: d.properties.name, x: c[0], y: c[1], r: sizeScale(size) };
 				}).filter(Boolean).sort((a, b) => b.r - a.r);
 
-				// during resize we want bubbles to snap to their new positions in lockstep
-				// with the country paths; otherwise a 400ms transition gives a visible lag
 				const maybeT = s => skipTransition ? s : s.transition().duration(400);
 
 				gBubbles.selectAll("circle.bubble")
@@ -489,8 +426,6 @@
 				applySelection();
 			};
 
-			// draw pictograms
-			// cached by size and unit, wealth filter not in key
 			const drawPictograms = () => {
 				const cacheKey = currentSize + "|" + iconUnit;
 				let points = pictoCache.get(cacheKey);
@@ -500,12 +435,10 @@
 						const rec = byName.get(feat.properties.name);
 						const pop = sizeValue(rec);
 						if (!pop) return null;
-						// pop_total / pop_u5 columns are in thousands
 						const n = Math.max(1, Math.round(pop * 1000 / iconUnit));
 						return { feat, n };
 					}).filter(Boolean);
 
-					// global icon cap for performance
 					let total = d3.sum(raw, r => r.n);
 					if (total > ICON_CAP) {
 						const f = ICON_CAP / total;
@@ -541,11 +474,9 @@
 				applySelection();
 			};
 
-			// sample random points inside a country polygon
 			const samplePointsIn = (feature, n) => {
 				const pts = [];
 
-				// tiny grid for very small countries
 				if (n <= 4) {
 					const [cx, cy] = path.centroid(feature);
 					if (!isFinite(cx)) return pts;
@@ -563,7 +494,6 @@
 					return pts;
 				}
 
-				// control geobound plot
 				const [[lon0, lat0], [lon1, lat1]] = d3.geoBounds(feature);
 				const wraps = lon1 < lon0;
 				const dLon  = wraps ? (360 - lon0 + lon1) : (lon1 - lon0);
@@ -580,7 +510,6 @@
 					}
 					tries++;
 				}
-				// fallback for sparse bbox hits like island countries
 				if (pts.length < n) {
 					const [cx, cy] = path.centroid(feature);
 					if (isFinite(cx)) {
@@ -592,26 +521,52 @@
 				return pts;
 			};
 
+			// build the mini child-mortality bubble block shown inside the tooltip
+			// (adapted from comparison_chart.html — Global avg vs this country)
+			const mortBlock = (rec) => {
+				if (!rec || rec.infant_mortality == null) return "";
+				const v = rec.infant_mortality;
+				const ra = mortScale(mortAvg);
+				const rc = mortScale(v);
+				const w = 170, h = 70;
+				const cxA = 42, cxC = 128, cy = 32;
+				return `
+					<div class="mort-block">
+						<div class="mort-title">Infant mortality (per 1,000 births)</div>
+						<svg class="mort-svg" width="${w}" height="${h}">
+							<circle cx="${cxA}" cy="${cy}" r="${ra}" fill="#c73a3a" fill-opacity=".55" stroke="#922" stroke-opacity=".7"/>
+							<circle cx="${cxC}" cy="${cy}" r="${rc}" fill="#c73a3a" fill-opacity=".85" stroke="#922" stroke-opacity=".9"/>
+							<text x="${cxA}" y="${h - 12}" text-anchor="middle">Global avg</text>
+							<text x="${cxA}" y="${h - 2}"  text-anchor="middle" style="font-weight:600;">${mortAvg.toFixed(1)}</text>
+							<text x="${cxC}" y="${h - 12}" text-anchor="middle">This country</text>
+							<text x="${cxC}" y="${h - 2}"  text-anchor="middle" style="font-weight:600;">${v}</text>
+						</svg>
+					</div>`;
+			};
+
 			// tooltip
 			const showTooltip = (e, d) => {
-				const rec = byName.get(d.properties.name) || {};
-				const gap = (rec.continued_richest != null && rec.continued_poorest != null)
-					? rec.continued_richest - rec.continued_poorest : null;
+				const rec = byName.get(d.properties.name);
 				const rows = [
-					["Continued BF (All)",         rec.continued_all],
-					["Continued BF (Poorest 20%)", rec.continued_poorest],
-					["Continued BF (Richest 20%)", rec.continued_richest],
-					["Gap (Rich − Poor)",          gap],
-					["Early initiation %",         rec.early_initiation],
-					["Exclusive BF <6m %",         rec.exclusive_u6m],
-					["Total pop (k)",              rec.pop_total],
-					["Under-5 pop (k)",            rec.pop_u5]
+					["Continued BF 12–23m (%)", rec && rec.continued_all],
+					["Early initiation (%)",    rec && rec.early_initiation],
+					["Exclusive BF <6m (%)",    rec && rec.exclusive_u6m],
+					["Under-5 pop (k)",         rec && rec.pop_u5]
 				];
 				const fmt = v => v == null ? '<span style="color:#aaa">—</span>' :
 					(typeof v === "number" ? v.toLocaleString(undefined, { maximumFractionDigits: 1 }) : v);
+
+				let body;
+				if (!hasBFData(rec)) {
+					body = `<div class="no-bf">No breastfeeding data</div>`;
+				} else {
+					body = rows.map(([k, v]) => `<div class="row"><span>${k}</span><span>${fmt(v)}</span></div>`).join("");
+				}
+
 				tooltip.html(
 					`<h4>${d.properties.name}</h4>` +
-					rows.map(([k, v]) => `<div class="row"><span>${k}</span><span>${fmt(v)}</span></div>`).join("")
+					body +
+					mortBlock(rec)
 				)
 					.style("opacity", 1)
 					.style("left", (e.pageX + 14) + "px")
@@ -619,88 +574,75 @@
 			};
 			const hideTooltip = () => tooltip.style("opacity", 0);
 
-			// selection
-			// up to MAX_SELECTED countries can be pinned at once; clicking a pinned
-			// country unpins it, clicking a third drops the oldest
+			// selection — block countries without BF data
 			const toggleSelect = (feat) => {
 				const name = feat.properties.name;
-				const i = selectedNames.indexOf(name);
+				const rec  = byName.get(name);
+				if (!hasBFData(rec)) return;    // refuse click if no BF data
+				const i = selectedWA.indexOf(name);
 				if (i >= 0) {
-					selectedNames.splice(i, 1);
+					selectedWA.splice(i, 1);
 				} else {
-					selectedNames.push(name);
-					if (selectedNames.length > MAX_SELECTED) selectedNames.shift();
+					selectedWA.push(name);
+					if (selectedWA.length > MAX_SELECTED) selectedWA.shift();
 				}
 				applySelection();
 				broadcastSelection();
 			};
 
-			// repaint country outlines, bubbles and pictograms to match selectedNames
-			// slot 0 = first pinned (orange), slot 1 = second pinned (indigo)
-			// when at least one country is pinned, everyone else gets `.dimmed`
 			const applySelection = () => {
-				const hasSel = selectedNames.length > 0;
+				const hasSel = selectedWA.length > 0;
 				const paint = (sel, nameOf) =>
-					sel.classed("selected-0", d => nameOf(d) === selectedNames[0])
-					   .classed("selected-1", d => nameOf(d) === selectedNames[1])
-					   .classed("dimmed",     d => hasSel && !selectedNames.includes(nameOf(d)));
+					sel.classed("selected-0", d => nameOf(d) === selectedWA[0])
+					   .classed("selected-1", d => nameOf(d) === selectedWA[1])
+					   .classed("dimmed",     d => hasSel && !selectedWA.includes(nameOf(d)));
 				paint(gCountries.selectAll("path.country"), d => d.properties.name);
 				paint(gBubbles.selectAll("circle.bubble"),  d => d.name);
 				paint(gPictograms.selectAll("use.person"),  d => d.country);
 
 				d3.select("#selected-label")
-					.text(selectedNames.length ? "Selected: " + selectedNames.join("  vs  ") : "");
+					.text(selectedWA.length ? "Selected: " + selectedWA.join("  vs  ") : "");
 			};
 
-			// broadcast countrySelected event for radar and bar views
+			// broadcast CSV country names (so radar / bar can match their CSVs)
+			const waToCsv = (wa) => {
+				const rec = byName.get(wa);
+				return rec ? rec.country : wa;
+			};
 			const broadcastSelection = () => {
+				const csvNames = selectedWA.map(waToCsv);
 				window.dispatchEvent(new CustomEvent("countrySelected", {
 					detail: {
-						countries: selectedNames.slice(),
-						data:      selectedNames.map(n => byName.get(n) || null)
+						countries: csvNames,
+						data:      selectedWA.map(n => byName.get(n) || null)
 					}
 				}));
 			};
 
-			// legend
 			const drawLegend = () => {
 				legendDiv.html("");
-
-				// colour legend
-				if (currentMetric === "gap") {
-					const m = colorScale.domain()[2];
-					legendDiv.append("h5").text("Gap: Richest − Poorest (pct. pts)");
-					const bar = legendDiv.append("div").attr("class", "color-bar");
-					const N = 24;
-					for (let i = 0; i < N; i++) {
-						const t = -m + 2 * m * (i / (N - 1));
-						bar.append("div").style("background", colorScale(t));
-					}
-					const ticks = legendDiv.append("div").attr("class", "ticks");
-					ticks.append("span").text("−" + m.toFixed(0));
-					ticks.append("span").text("0");
-					ticks.append("span").text("+" + m.toFixed(0));
-					legendDiv.append("div")
-						.style("font-size", "10px").style("color", "var(--muted)").style("margin-top", "2px")
-						.html("purple = poorer breastfeed more &middot; orange = richer breastfeed more");
-				} else {
-					const label = {
-						continued_all: "All children",
-						continued_poorest: "Poorest 20%",
-						continued_richest: "Richest 20%"
-					}[currentMetric];
-					legendDiv.append("h5").text(`Continued BF 12–23m (%) — ${label}`);
-					const bar = legendDiv.append("div").attr("class", "color-bar");
-					const N = 24;
-					for (let i = 0; i < N; i++) {
-						bar.append("div").style("background",
-							colorScale(bfMin + (bfMax - bfMin) * (i / (N - 1))));
-					}
-					const ticks = legendDiv.append("div").attr("class", "ticks");
-					ticks.append("span").text(bfMin + "%");
-					ticks.append("span").text(((bfMin + bfMax) / 2).toFixed(0) + "%");
-					ticks.append("span").text(bfMax + "%");
+				legendDiv.append("h5").text("Continued BF 12–23m (%) — All children");
+				const bar = legendDiv.append("div").attr("class", "color-bar");
+				const N = 24;
+				for (let i = 0; i < N; i++) {
+					bar.append("div").style("background",
+						colorScale(bfMin + (bfMax - bfMin) * (i / (N - 1))));
 				}
+				const ticks = legendDiv.append("div").attr("class", "ticks");
+				ticks.append("span").text(bfMin + "%");
+				ticks.append("span").text(((bfMin + bfMax) / 2).toFixed(0) + "%");
+				ticks.append("span").text(bfMax + "%");
+
+				// no-data swatch
+				const nd = legendDiv.append("div")
+					.style("display", "flex").style("align-items", "center")
+					.style("gap", "6px").style("margin-top", "4px")
+					.style("font-size", "10px").style("color", "var(--muted)");
+				nd.append("div")
+					.style("width", "12px").style("height", "12px")
+					.style("background", "#e6e6e6").style("border", "1px solid #ccc")
+					.style("border-radius", "2px");
+				nd.append("span").text("No data (not selectable)");
 
 				// population legend
 				if (currentStyle === "pictogram") {
@@ -757,20 +699,11 @@
 			};
 
 			// init
-			rebuildColorScale();
 			rebuildSizeScale();
 			draw();
 			drawLegend();
 
 			// controls
-			// each handler only redraws the layer it affects
-			d3.selectAll('input[name="quintile"]').on("change", function () {
-				currentMetric = this.value;
-				rebuildColorScale();
-				drawChoropleth();
-				drawLegend();
-			});
-
 			d3.selectAll('input[name="size"]').on("change", function () {
 				currentSize = this.value;
 				rebuildSizeScale();
@@ -798,7 +731,6 @@
 			d3.select("#zoom-out-btn").on("click", () => zoomBy(1 / 1.5));
 			d3.select("#zoom-fit-btn").on("click", () => resetZoom());
 
-			// keyboard: + / = to zoom in, - / _ to zoom out, 0 to reset
 			window.addEventListener("keydown", (e) => {
 				if (e.target.matches("input, select, textarea")) return;
 				if (e.key === "+" || e.key === "=")       { zoomBy(1.5);     e.preventDefault(); }
@@ -807,7 +739,7 @@
 			});
 
 			d3.select("#reset-btn").on("click", () => {
-				selectedNames = [];
+				selectedWA = [];
 				applySelection();
 				resetZoom(500);
 				broadcastSelection();
