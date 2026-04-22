@@ -630,10 +630,14 @@
 					const parts = selectedWA.map((name, i) =>
 						`<span style="color:${SEL_COLORS[i]};font-weight:700;">${name}</span>`
 					);
-					label.html(parts.join(
+					const joined = parts.join(
 						' <span style="color:#888;font-weight:400;">vs</span> '
-					));
+					);
+					label.html(
+						'<span style="color:var(--muted);font-weight:600;margin-right:4px;">Selected:</span>' + joined
+					);
 				}
+				
 			};
 
 			// broadcast CSV country names (so radar / bar can match their CSVs)
