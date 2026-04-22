@@ -105,6 +105,29 @@
                 ? '<span style="color:#aaa">—</span>'
                 : (+v).toLocaleString(undefined, { maximumFractionDigits: 1 }) + "%";
 
+            // Edge-aware placement: flip the tooltip to the opposite side of
+            // the cursor when the default pageX+14/pageY+14 spot would push it
+            // past the iframe's visible area, then clamp just inside each edge
+            // so the box is always fully visible.
+            function placeTooltip(pageX, pageY) {
+                const node   = tooltip.node();
+                const tw     = node.offsetWidth;
+                const th     = node.offsetHeight;
+                const vw     = window.innerWidth;
+                const vh     = window.innerHeight;
+                const OFFSET = 14;
+                const PAD    = 6;
+
+                let left = pageX + OFFSET;
+                let top  = pageY + OFFSET;
+                if (left + tw + PAD > vw) left = pageX - tw - OFFSET;
+                if (top  + th + PAD > vh) top  = pageY - th - OFFSET;
+                left = Math.max(PAD, Math.min(left, vw - tw - PAD));
+                top  = Math.max(PAD, Math.min(top,  vh - th - PAD));
+
+                tooltip.style("left", left + "px").style("top", top + "px");
+            }
+
 
 
             // Define line before using it
@@ -197,15 +220,11 @@
                             ).join("");
                             tooltip.html(
                                 `<h4 style="color:${color};">${point.Country}</h4>` + rows
-                            )
-                            .style("opacity", 1)
-                            .style("left", (event.pageX + 14) + "px")
-                            .style("top",  (event.pageY + 14) + "px");
+                            ).style("opacity", 1);
+                            placeTooltip(event.pageX, event.pageY);
                         })
                         .on("mousemove", (event) => {
-                            tooltip
-                                .style("left", (event.pageX + 14) + "px")
-                                .style("top",  (event.pageY + 14) + "px");
+                            placeTooltip(event.pageX, event.pageY);
                         })
                         .on("mouseout", () => tooltip.style("opacity", 0));
 
