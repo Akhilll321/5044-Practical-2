@@ -2,7 +2,7 @@
 <html>
 
 <head>
-
+	<meta charset="utf-8">
 	<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 	<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
 
@@ -44,8 +44,8 @@
 			letter-spacing: .5px;
 			padding: 0 4px;
 		}
-		.controls label { font-size: 12px; margin-right: 8px; cursor: pointer; }
-		.controls input[type=radio] { vertical-align: middle; margin-right: 3px; }
+		.controls label {font-size: 12px; margin-right: 8px; cursor: pointer; }
+		.controls input[type=radio] {vertical-align: middle; margin-right: 3px; }
 
 		#reset-btn {
 			background: #eee;
@@ -55,7 +55,7 @@
 			font-size: 12px;
 			cursor: pointer;
 		}
-		#reset-btn:hover { background: #e0e0e0; }
+		#reset-btn:hover {background: #e0e0e0;}
 
 		#map-wrap {
 			position: relative;
@@ -70,8 +70,8 @@
 			background: white;
 		}
 
-		html, body, #map-wrap { height: 100%; }
-		body { display: flex; flex-direction: column; }
+		html, body, #map-wrap {height: 100%;}
+		body {display: flex; flex-direction: column;}
 
 		.country {
 			stroke: #fff;
@@ -79,31 +79,30 @@
 			cursor: pointer;
 			transition: stroke-width .1s, stroke .1s, opacity .25s;
 		}
-		.country:hover        { stroke: #111;    stroke-width: 1.2px; }
-		/* Selected borders get a 1px white halo via drop-shadow so the stroke
-		   stays legible against any choropleth fill */
+		.country:hover {stroke: #111;    stroke-width: 1.2px;}
+		/* Selected borders get a 1px white halo via drop-shadow */
 		.country.selected-0,
 		.country.selected-1 {
 			stroke-width: 2.4px;
 			paint-order: stroke;
 			filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff);
 		}
-		.country.selected-0   { stroke: #ff9800; }
-		.country.selected-1   { stroke: #3f51b5; }
-		.country.dimmed       { opacity: .28; }
-		.country.dimmed:hover { opacity: .7; }
+		.country.selected-0   {stroke: #ff9800; }
+		.country.selected-1   {stroke: #3f51b5; }
+		.country.dimmed       {opacity: .28; }
+		.country.dimmed:hover {opacity: .7; }
 
 		/* Countries without breastfeeding data: greyed, not clickable visually */
-		.country.no-data        { cursor: not-allowed; }
-		.country.no-data:hover  { stroke: #999; stroke-width: .8px; }
+		.country.no-data        {cursor: not-allowed; }
+		.country.no-data:hover  {stroke: #999; stroke-width: .8px; }
 
-		.bubble               { fill: #1a1a1a; fill-opacity: .06; stroke: #1a1a1a; stroke-opacity: .7; stroke-width: .7px; pointer-events: none; transition: opacity .25s; }
-		.bubble.selected-0    { fill: #ff9800; fill-opacity: .55; stroke: #c57600; stroke-opacity: .95; stroke-width: 1.3px; }
-		.bubble.selected-1    { fill: #3f51b5; fill-opacity: .55; stroke: #1a237e; stroke-opacity: .95; stroke-width: 1.3px; }
-		.bubble.dimmed        { opacity: .25; }
+		.bubble               {fill: #1a1a1a; fill-opacity: .06; stroke: #1a1a1a; stroke-opacity: .7; stroke-width: .7px; pointer-events: none; transition: opacity .25s; }
+		.bubble.selected-0    {fill: #ff9800; fill-opacity: .55; stroke: #c57600; stroke-opacity: .95; stroke-width: 1.3px; }
+		.bubble.selected-1    {fill: #3f51b5; fill-opacity: .55; stroke: #1a237e; stroke-opacity: .95; stroke-width: 1.3px; }
+		.bubble.dimmed        {opacity: .25; }
 
-		.person               { fill: #1a1a1a; fill-opacity: .38; pointer-events: none; transition: opacity .25s; }
-		.person.dimmed        { opacity: .3; }
+		.person               {fill: #1a1a1a; fill-opacity: .38; pointer-events: none; transition: opacity .25s; }
+		.person.dimmed        {opacity: .3; }
 
 		.tooltip {
 			position: absolute;
@@ -118,9 +117,9 @@
 			line-height: 1.35;
 			transition: opacity .1s;
 		}
-		.tooltip h4 { margin: 0 0 4px 0; font-size: 13px; }
-		.tooltip .row { display: flex; justify-content: space-between; gap: 12px; }
-		.tooltip .row span:last-child { font-variant-numeric: tabular-nums; }
+		.tooltip h4 {margin: 0 0 4px 0; font-size: 13px;}
+		.tooltip .row {display: flex; justify-content: space-between; gap: 12px;}
+		.tooltip .row span:last-child {font-variant-numeric: tabular-nums;}
 		.tooltip .no-bf {
 			margin-top: 4px;
 			padding: 3px 6px;
@@ -143,7 +142,7 @@
 			color: var(--muted);
 			margin-bottom: 2px;
 		}
-		.tooltip .mort-svg text { font-size: 9px; fill: #444; }
+		.tooltip .mort-svg text {font-size: 9px; fill: #444;}
 
 		.legend {
 			position: absolute;
@@ -182,9 +181,7 @@
 			padding: 0;
 			cursor: pointer;
 		}
-		#population{
-    display: none;
-}
+
 		.zoom-controls button:hover  { background: #e8e8e8; }
 		.zoom-controls button:active { background: #ddd; }
 		.legend h5 {
@@ -215,11 +212,11 @@
 		</fieldset>
 		<fieldset>
 			<legend>Display style</legend>
+			<label><input type="radio" name="style" value="none" checked> None</label>
 			<label><input type="radio" name="style" value="pictogram"> Pictogram</label>
 			<label><input type="radio" name="style" value="bubble"> Bubble</label>
-			<label><input type="radio" name="style" value="none" checked> None</label>
 		</fieldset>
-		<fieldset id="unit-fs">
+		<fieldset id="unit-fs" style="display:none;">
 			<legend>Icon unit (people per figure)</legend>
 			<select id="unit-select">
 				<option value="100000">1 = 100 k</option>
@@ -258,7 +255,7 @@
 
 			// state
 			const ICON_CAP     = 5500;
-			const MAX_SELECTED = 3;   // up to three countries can be pinned for comparison
+			const MAX_SELECTED = 2;   // up to two countries can be pinned for comparison
 			let currentSize    = "pop_u5";
 			let currentStyle   = "none";
 			let iconUnit       = 200000;
@@ -533,23 +530,31 @@
 			};
 
 			// build the mini child-mortality bubble block shown inside the tooltip
-			const mortBlock = (rec) => {
+			const mortBlock = (rec, countryName) => {
 				if (!rec || rec.infant_mortality == null) return "";
 				const v = rec.infant_mortality;
 				const ra = mortScale(mortAvg);
 				const rc = mortScale(v);
-				const w = 170, h = 70;
-				const cxA = 42, cxC = 128, cy = 32;
+				const w = 200, h = 95;
+				const cxA = 48, cxC = 148, cy = 26;
+				const labelY = 68; // well below the largest bubble (cy + 22 = 48)
+				const valueY = 82;
+				// Ellipsise very long country names so they fit in the tooltip width
+				const shortName = countryName.length > 16
+					? countryName.slice(0, 15) + "…"
+					: countryName;
 				return `
 					<div class="mort-block">
 						<div class="mort-title">Infant mortality (per 1,000 births)</div>
 						<svg class="mort-svg" width="${w}" height="${h}">
 							<circle cx="${cxA}" cy="${cy}" r="${ra}" fill="#c73a3a" fill-opacity=".55" stroke="#922" stroke-opacity=".7"/>
 							<circle cx="${cxC}" cy="${cy}" r="${rc}" fill="#c73a3a" fill-opacity=".85" stroke="#922" stroke-opacity=".9"/>
-							<text x="${cxA}" y="${h - 12}" text-anchor="middle">Global avg</text>
-							<text x="${cxA}" y="${h - 2}"  text-anchor="middle" style="font-weight:600;">${mortAvg.toFixed(1)}</text>
-							<text x="${cxC}" y="${h - 12}" text-anchor="middle">This country</text>
-							<text x="${cxC}" y="${h - 2}"  text-anchor="middle" style="font-weight:600;">${v}</text>
+							<text x="${cxA}" y="${labelY}" text-anchor="middle">Global avg</text>
+							<text x="${cxA}" y="${valueY}"  text-anchor="middle" style="font-weight:600;">${mortAvg.toFixed(1)}</text>
+							<text x="${cxC}" y="${labelY}" text-anchor="middle">
+								<title>${countryName}</title>${shortName}
+							</text>
+							<text x="${cxC}" y="${valueY}"  text-anchor="middle" style="font-weight:600;">${v}</text>
 						</svg>
 					</div>`;
 			};
@@ -576,7 +581,7 @@
 				tooltip.html(
 					`<h4>${d.properties.name}</h4>` +
 					body +
-					mortBlock(rec)
+					mortBlock(rec, d.properties.name)
 				)
 					.style("opacity", 1)
 					.style("left", (e.pageX + 14) + "px")
