@@ -112,7 +112,7 @@
                 .text((d, i) => featureLabels[i])
                 .attr("text-anchor", "middle")
                 .style("font-size", "18px");
-            let colors = ["#ff9800", "#3f51b5"];//color alignment
+            let colors = ["#3f51b5", "#ff9800"];//color alignment
 
             function getPathCoordinates(data_point){
                 let coordinates = [];
@@ -162,7 +162,7 @@
                 });
                 svg.selectAll(".grid-circle").raise();
             }
-            // Load CSV and create dropdown menu
+            // Load CSV 
             d3.csv("data/final_new3.csv").then(function(csvData) {
                 allData = csvData;  
                 updateRadar();
