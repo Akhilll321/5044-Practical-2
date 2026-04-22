@@ -16,8 +16,7 @@
                 height: calc(100vh - 14px);
             }
 
-            /* HTML tooltip — styled to match the map tooltip exactly so the
-               dashboard has a single consistent tooltip look. */
+            /* Tooltip — styled to match the map tooltip */
             .tooltip {
                 position: absolute;
                 pointer-events: none;
@@ -105,10 +104,7 @@
                 ? '<span style="color:#aaa">—</span>'
                 : (+v).toLocaleString(undefined, { maximumFractionDigits: 1 }) + "%";
 
-            // Edge-aware placement: flip the tooltip to the opposite side of
-            // the cursor when the default pageX+14/pageY+14 spot would push it
-            // past the iframe's visible area, then clamp just inside each edge
-            // so the box is always fully visible.
+            // Flip the tooltip to the opposite side of the cursor when the default
             function placeTooltip(pageX, pageY) {
                 const node   = tooltip.node();
                 const tw     = node.offsetWidth;
@@ -196,8 +192,6 @@
                 plotData.forEach((point, i) => {
                     let coordinates = getPathCoordinates(point);
                     // Use the original selection order so country 1/2/3 always
-                    // line up with orange / indigo / purple, even if the CSV
-                    // filter returns them in a different order.
                     let colorIdx = selectedCountries.indexOf(point.Country);
                     if (colorIdx < 0) colorIdx = i;
                     let color = colors[colorIdx % colors.length];
@@ -212,8 +206,7 @@
                         .attr("stroke-opacity", 1)
                         .attr("fill-opacity", 0.3)
 
-                        // HTML tooltip: country name on the first line (tinted
-                        // with the country's colour), one row per feature.
+                        // Tooltip
                         .on("mouseover", (event) => {
                             const rows = featureLabels.map((label, k) =>
                                 `<div class="row"><span>${label}</span><span>${fmtVal(point[features[k]])}</span></div>`
