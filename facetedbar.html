@@ -37,6 +37,8 @@
       }
       #svg2 { fill:#3f51b5;
        }
+      #svg3 { fill:#800080;
+       }
       
       
       .cname        {
@@ -183,11 +185,11 @@ thirdchart.append("g").call(d3.axisLeft(num));
             .attr("fill", function() {  
             if (col === 0) return "#ff9800";
             else if (col === 1) return "#3f51b5";
-            else return "#9c27b0"; 
+            else return "#800080"; 
             })
             .attr("stroke", function() {if (col === 0) return "#ff9800";
             else if (col === 1) return "#3f51b5";
-            else return "#9c27b0"; 
+            else return "#800080"; 
             })
             .attr("fill-opacity", 0.3)
             .attr("stroke-opacity", 1.0)
