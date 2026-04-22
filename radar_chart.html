@@ -16,11 +16,30 @@
                 height: calc(100vh - 14px);
             }
 
+            /* HTML tooltip — styled to match the map tooltip exactly so the
+               dashboard has a single consistent tooltip look. */
+            .tooltip {
+                position: absolute;
+                pointer-events: none;
+                background: rgba(255, 255, 255, .97);
+                border: 1px solid #bbb;
+                border-radius: 6px;
+                padding: 8px 10px;
+                font-size: 12px;
+                box-shadow: 0 4px 14px rgba(0, 0, 0, .12);
+                max-width: 260px;
+                line-height: 1.35;
+                transition: opacity .1s;
+            }
+            .tooltip h4 { margin: 0 0 4px 0; font-size: 13px; }
+            .tooltip .row { display: flex; justify-content: space-between; gap: 12px; }
+            .tooltip .row span:last-child { font-variant-numeric: tabular-nums; }
         </style>
     </head>
 
     <body>
         <svg viewBox="-100 -100 760 760" ></svg>
+        <div class="tooltip" id="tooltip" style="opacity:0;"></div>
 
         <script>
             let allData = [];
@@ -78,24 +97,15 @@
                 return {"x": width / 2 + x, "y": height / 2 - y};
             }
 
-            // Hover tooltip
-            const tooltip = svg.append("g")
-                                .style("visibility", "hidden")
-                                .style("pointer-events", "none");
-                            tooltip.append("rect")
-                                    .attr("width", 350)
-                                    .attr("height", 120)
-                                    .attr("fill", "white")
-                                    .attr("stroke", "black")
-                                    .attr("rx", 4);
-            const tooltipLines = features.map((_, i) =>
-                tooltip.append("text")
-                        .attr("x", 8)
-                        .attr("y", 18 + i * 20)
-                        .style("font-size", "18px")
-            );
-            
-                                                            
+            // HTML tooltip (styled in CSS to match the map tooltip)
+            const tooltip = d3.select("#tooltip");
+
+            // Format radar values for display in the tooltip
+            const fmtVal = v => (v == null || v === "" || isNaN(+v))
+                ? '<span style="color:#aaa">—</span>'
+                : (+v).toLocaleString(undefined, { maximumFractionDigits: 1 }) + "%";
+
+
 
             // Define line before using it
             let line = d3.line()
@@ -159,11 +169,16 @@
                 let plotData = allData.filter(d => selectedCountries.includes(d.Country));
 
 
-                // Draw each country's path 
+                // Draw each country's path
                 plotData.forEach((point, i) => {
                     let coordinates = getPathCoordinates(point);
-                    let color = colors[i % colors.length];
-                    
+                    // Use the original selection order so country 1/2/3 always
+                    // line up with orange / indigo / purple, even if the CSV
+                    // filter returns them in a different order.
+                    let colorIdx = selectedCountries.indexOf(point.Country);
+                    if (colorIdx < 0) colorIdx = i;
+                    let color = colors[colorIdx % colors.length];
+
                     // Draw path
                     svg.append("path")
                         .datum(coordinates)
@@ -174,19 +189,25 @@
                         .attr("stroke-opacity", 1)
                         .attr("fill-opacity", 0.3)
 
-                        // Add the tooltip on hover
+                        // HTML tooltip: country name on the first line (tinted
+                        // with the country's colour), one row per feature.
                         .on("mouseover", (event) => {
-                            tooltipLines.forEach((t, i) => {
-                                t.text(`${featureLabels[i]}: ${point[features[i]] || "N/A"}%`);
-                            });
-                            const [mx, my] = d3.pointer(event, svg.node());
-                            tooltip.attr("transform", `translate(${mx + 10}, ${my - 30})`).style("visibility", "visible");
+                            const rows = featureLabels.map((label, k) =>
+                                `<div class="row"><span>${label}</span><span>${fmtVal(point[features[k]])}</span></div>`
+                            ).join("");
+                            tooltip.html(
+                                `<h4 style="color:${color};">${point.Country}</h4>` + rows
+                            )
+                            .style("opacity", 1)
+                            .style("left", (event.pageX + 14) + "px")
+                            .style("top",  (event.pageY + 14) + "px");
                         })
                         .on("mousemove", (event) => {
-                            const [mx, my] = d3.pointer(event, svg.node());
-                            tooltip.attr("transform", `translate(${mx + 10}, ${my - 30})`);
+                            tooltip
+                                .style("left", (event.pageX + 14) + "px")
+                                .style("top",  (event.pageY + 14) + "px");
                         })
-                        .on("mouseout", () => tooltip.style("visibility", "hidden"));
+                        .on("mouseout", () => tooltip.style("opacity", 0));
 
                 // Draw points
                     coordinates.forEach(coord => {
