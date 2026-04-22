@@ -82,13 +82,15 @@
 		.country:hover {stroke: #111;    stroke-width: 1.2px;}
 		/* Selected borders get a 1px white halo via drop-shadow */
 		.country.selected-0,
-		.country.selected-1 {
-			stroke-width: 2.4px;
+		.country.selected-1,
+		.country.selected-2 {
+			stroke-width: 3px;
 			paint-order: stroke;
 			filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff);
 		}
 		.country.selected-0   {stroke: #ff9800; }
 		.country.selected-1   {stroke: #3f51b5; }
+		.country.selected-2   {stroke: #800080; }
 		.country.dimmed       {opacity: .28; }
 		.country.dimmed:hover {opacity: .7; }
 
@@ -99,6 +101,7 @@
 		.bubble               {fill: #1a1a1a; fill-opacity: .06; stroke: #1a1a1a; stroke-opacity: .7; stroke-width: .7px; pointer-events: none; transition: opacity .25s; }
 		.bubble.selected-0    {fill: #ff9800; fill-opacity: .55; stroke: #c57600; stroke-opacity: .95; stroke-width: 1.3px; }
 		.bubble.selected-1    {fill: #3f51b5; fill-opacity: .55; stroke: #1a237e; stroke-opacity: .95; stroke-width: 1.3px; }
+		.bubble.selected-2    {fill: #800080; fill-opacity: .55; stroke: #4a004a; stroke-opacity: .95; stroke-width: 1.3px; }
 		.bubble.dimmed        {opacity: .25; }
 
 		.person               {fill: #1a1a1a; fill-opacity: .38; pointer-events: none; transition: opacity .25s; }
@@ -204,14 +207,8 @@
 
 <body>
 	<div class="controls">
-		<fieldset id="population">
-			<legend>Population metric</legend>
-			<label><input type="radio" name="size" value="pop_u5" checked> Under-5</label>
-			<label><input type="radio" name="size" value="pop_total"> Total</label>
-			<label><input type="radio" name="size" value="deficit"> Not-cont. BF</label>
-		</fieldset>
 		<fieldset>
-			<legend>Display style</legend>
+			<legend>Under-5 Population Display style</legend>
 			<label><input type="radio" name="style" value="none" checked> None</label>
 			<label><input type="radio" name="style" value="pictogram"> Pictogram</label>
 			<label><input type="radio" name="style" value="bubble"> Bubble</label>
@@ -220,14 +217,14 @@
 			<legend>Icon unit (people per figure)</legend>
 			<select id="unit-select">
 				<option value="100000">1 = 100 k</option>
-				<option value="200000" selected>1 = 200 k</option>
-				<option value="500000">1 = 500 k</option>
+				<option value="200000">1 = 200 k</option>
+				<option value="500000" selected>1 = 500 k</option>
 				<option value="1000000">1 = 1 M</option>
 				<option value="2000000">1 = 2 M</option>
 			</select>
 		</fieldset>
 		<button id="reset-btn" title="Clear selection and reset zoom">Reset</button>
-		<span id="selected-label" style="font-size:12px;color:var(--muted);"></span>
+		<span id="selected-label" style="font-size:15px;"></span>
 	</div>
 
 	<div id="map-wrap">
@@ -255,11 +252,10 @@
 
 			// state
 			const ICON_CAP     = 5500;
-			const MAX_SELECTED = 2;   // up to two countries can be pinned for comparison
-			let currentSize    = "pop_u5";
+			const MAX_SELECTED = 3;   // up to three countries can be pinned for comparison
 			let currentStyle   = "none";
-			let iconUnit       = 200000;
-			let selectedWA     = [];  // world-atlas names (used for styling); broadcast translates to CSV names
+			let iconUnit       = 500000;
+			let selectedWA     = [];  // world-atlas names (used for styling)
 			let skipTransition = false;
 			const pictoCache   = new Map();
 
@@ -302,7 +298,7 @@
 			};
 			const toWA = (n) => nameOverrides[n] || n;
 
-			// numeric parser — strips thousands separators and treats "-"/"" as null
+			// treats "-"/"" as null
 			const parseNum = (v) => {
 				if (v == null) return null;
 				const s = String(v).replace(/,/g, "").trim();
@@ -311,7 +307,7 @@
 				return isNaN(n) ? null : n;
 			};
 
-			// load CSV with direct named-column access (matches teammate style)
+			// load CSV with direct named-column access
 			const [world, rowsRaw] = await Promise.all([
 				d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"),
 				d3.csv("data/final_new3.csv")
@@ -323,10 +319,7 @@
 					exclusive_u6m:     parseNum(d["Exclusive breastfeeding (<6 months) (%)"]),
 					early_initiation:  parseNum(d["Early initiation of breastfeeding (%)"]),
 					continued_all:     parseNum(d["Continued breastfeeding (12–23 months) (%)All children"]),
-					continued_poorest: parseNum(d["Poorest 20%"]),
-					continued_richest: parseNum(d["Richest 20%"]),
 					infant_mortality:  parseNum(d["Infant mortality rate"]),
-					pop_total:         parseNum(d["Total"]),
 					pop_u5:            parseNum(d["Under 5"])
 				}))
 				.filter(d => d.country);
@@ -353,14 +346,7 @@
 
 			const metricValue = (rec) => rec ? rec.continued_all : null;
 
-			const sizeValue = (rec) => {
-				if (!rec) return 0;
-				if (currentSize === "deficit") {
-					if (rec.pop_u5 == null || rec.continued_all == null) return 0;
-					return rec.pop_u5 * (1 - rec.continued_all / 100);
-				}
-				return rec[currentSize] || 0;
-			};
+			const sizeValue = (rec) => (rec && rec.pop_u5) || 0;
 
 			let sizeScale;
 			const rebuildSizeScale = () => {
@@ -435,8 +421,7 @@
 			};
 
 			const drawPictograms = () => {
-				const cacheKey = currentSize + "|" + iconUnit;
-				let points = pictoCache.get(cacheKey);
+				let points = pictoCache.get(iconUnit);
 
 				if (!points) {
 					const raw = countriesGeo.map(feat => {
@@ -458,7 +443,7 @@
 						samplePointsIn(feat, n).forEach(([x, y]) =>
 							points.push({ x, y, country: feat.properties.name }));
 					});
-					pictoCache.set(cacheKey, points);
+					pictoCache.set(iconUnit, points);
 				}
 
 				const iconSize = 6;
@@ -560,6 +545,25 @@
 			};
 
 			// tooltip
+			const placeTooltip = (pageX, pageY) => {
+				const node   = tooltip.node();
+				const tw     = node.offsetWidth;
+				const th     = node.offsetHeight;
+				const vw     = window.innerWidth;
+				const vh     = window.innerHeight;
+				const OFFSET = 14;
+				const PAD    = 6;
+
+				let left = pageX + OFFSET;
+				let top  = pageY + OFFSET;
+				if (left + tw + PAD > vw) left = pageX - tw - OFFSET;
+				if (top  + th + PAD > vh) top  = pageY - th - OFFSET;
+				left = Math.max(PAD, Math.min(left, vw - tw - PAD));
+				top  = Math.max(PAD, Math.min(top,  vh - th - PAD));
+
+				tooltip.style("left", left + "px").style("top", top + "px");
+			};
+
 			const showTooltip = (e, d) => {
 				const rec = byName.get(d.properties.name);
 				const rows = [
@@ -582,10 +586,8 @@
 					`<h4>${d.properties.name}</h4>` +
 					body +
 					mortBlock(rec, d.properties.name)
-				)
-					.style("opacity", 1)
-					.style("left", (e.pageX + 14) + "px")
-					.style("top",  (e.pageY + 14) + "px");
+				).style("opacity", 1);
+				placeTooltip(e.pageX, e.pageY);
 			};
 			const hideTooltip = () => tooltip.style("opacity", 0);
 
@@ -605,18 +607,33 @@
 				broadcastSelection();
 			};
 
+			// Colours per selection slot — must match the map / radar / bar palette
+			const SEL_COLORS = ["#ff9800", "#3f51b5", "#800080"];
+
 			const applySelection = () => {
 				const hasSel = selectedWA.length > 0;
 				const paint = (sel, nameOf) =>
 					sel.classed("selected-0", d => nameOf(d) === selectedWA[0])
 					   .classed("selected-1", d => nameOf(d) === selectedWA[1])
+					   .classed("selected-2", d => nameOf(d) === selectedWA[2])
 					   .classed("dimmed",     d => hasSel && !selectedWA.includes(nameOf(d)));
 				paint(gCountries.selectAll("path.country"), d => d.properties.name);
 				paint(gBubbles.selectAll("circle.bubble"),  d => d.name);
 				paint(gPictograms.selectAll("use.person"),  d => d.country);
 
-				d3.select("#selected-label")
-					.text(selectedWA.length ? "Selected: " + selectedWA.join("  vs  ") : "");
+				const label = d3.select("#selected-label");
+				if (!hasSel) {
+					label.html('<span style="color:var(--muted);font-style:Bold;">'
+						+ 'Click a country to see its data'
+						+ '</span>');
+				} else {
+					const parts = selectedWA.map((name, i) =>
+						`<span style="color:${SEL_COLORS[i]};font-weight:700;">${name}</span>`
+					);
+					label.html(parts.join(
+						' <span style="color:#888;font-weight:400;">vs</span> '
+					));
+				}
 			};
 
 			// broadcast CSV country names (so radar / bar can match their CSVs)
@@ -680,13 +697,8 @@
 						.style("fill", "#1a1a1a").style("fill-opacity", .38);
 					row.append("span").style("font-size", "11px")
 						.text("= " + fmt(iconUnit).replace("G", "B") + " people");
-					const labelMap = {
-						pop_u5: "Under-5 population",
-						pop_total: "Total population",
-						deficit: "Children NOT continuing BF"
-					};
 					wrap.append("div").style("font-size", "10px").style("color", "var(--muted)")
-						.text(labelMap[currentSize]);
+						.text("Under-5 population");
 				} else if (currentStyle === "bubble") {
 					const vals = sowc.map(sizeValue).filter(v => v > 0);
 					const maxV = d3.max(vals);
@@ -703,13 +715,8 @@
 							.attr("x", maxR * 2 + 8).attr("y", 60 - 2 * r + 3)
 							.text(d3.format(".2s")(v * 1000).replace("G", "B"));
 					});
-					const labelMap = {
-						pop_u5: "Under-5 population (k)",
-						pop_total: "Total population (k)",
-						deficit: "Children NOT continuing BF (k)"
-					};
 					wrap.append("div").style("font-size", "10px").style("color", "var(--muted)")
-						.text(labelMap[currentSize]);
+						.text("Under-5 population (k)");
 				}
 			};
 
@@ -719,13 +726,6 @@
 			drawLegend();
 
 			// controls
-			d3.selectAll('input[name="size"]').on("change", function () {
-				currentSize = this.value;
-				rebuildSizeScale();
-				drawPopulation();
-				drawLegend();
-			});
-
 			d3.selectAll('input[name="style"]').on("change", function () {
 				currentStyle = this.value;
 				d3.select("#unit-fs").style("display", currentStyle === "pictogram" ? null : "none");
