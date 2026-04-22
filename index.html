@@ -40,6 +40,7 @@
 		}
 		.chip-a { background: var(--accent); }
 		.chip-b { background: var(--accent2); }
+		.chip-c { background: #800080; }
 
 		.grid {
 			display: flex;
@@ -48,10 +49,10 @@
 			box-sizing: border-box;
 			align-items: flex-start;
 		}
-		.col-left  { flex: 1.25 1 0; min-width: 720px; }
+		.col-left  { flex: 1.25 1 0; min-width: 0; }
 		.col-right {
 			flex: 1 1 0;
-			min-width: 520px;
+			min-width: 0;
 			display: flex;
 			flex-direction: column;
 			gap: 12px;
@@ -62,33 +63,36 @@
 			border: 1px solid var(--border);
 			border-radius: 6px;
 			overflow: hidden;
-			position: relative;
+			display: flex;
+			flex-direction: column;
 		}
 		.panel-title {
-			position: absolute;
-			top: 6px;
-			left: 10px;
+			display: block;
+			padding: 6px 12px;
+			background: var(--panel);
+			border-bottom: 1px solid var(--border);
 			font-size: 11px;
 			color: var(--muted);
 			text-transform: uppercase;
 			letter-spacing: .6px;
-			pointer-events: none;
-			z-index: 1;
+			flex: none;
 		}
 
-		/* Left map ≈ right (radar + gap + bar) so the two columns line up. */
-		.panel.map   { height: 820px; }
-		.panel.radar { height: 404px; }
-		.panel.bar   { height: 404px; }
+		/* Left map ≈ right (radar + gap + bar) so the two columns line up.
+		   Heights scale with the viewport, clamped to a sensible min/max. */
+		.panel.map   { height: clamp(520px, calc(100vh - 180px), 900px); }
+		.panel.radar { height: clamp(254px, calc(50vh - 96px),  444px); }
+		.panel.bar   { height: clamp(254px, calc(50vh - 96px),  444px); }
 
 		iframe {
+			flex: 1;
+			min-height: 0;
 			width: 100%;
-			height: 100%;
 			border: 0;
 			display: block;
 		}
 
-		@media (max-width: 1280px) {
+		@media (max-width: 1080px) {
 			.grid { flex-direction: column; }
 			.col-left, .col-right { flex: none; width: 100%; min-width: 0; }
 		}
@@ -138,11 +142,13 @@
 		<h1>SOWC 2025 — Children &amp; Inequality</h1>
 		<p>
 			[Some text here]
-			Click up to two countries on the map to compare them across maternal context and adolescent
+			Click up to three countries on the map to compare them across maternal context and adolescent
 			learning &mdash; country 1 is shown in
 			<span class="legend-chip chip-a"></span><b>orange</b>,
 			country 2 in
-			<span class="legend-chip chip-b"></span><b>indigo</b>.
+			<span class="legend-chip chip-b"></span><b>indigo</b>,
+			country 3 in
+			<span class="legend-chip chip-c"></span><b>purple</b>.
 			Countries without breastfeeding data are greyed out and cannot be selected.
 		</p>
 	</header>
@@ -150,7 +156,7 @@
 	<div class="grid">
 		<div class="col-left">
 			<div class="panel map">
-				<span class="panel-title">Global Map</span>
+				<span class="panel-title">Continued Breastfeeding Rate Global Map</span>
 				<iframe id="f-map"   src="map_country.html"></iframe>
 			</div>
 		</div>
@@ -160,7 +166,7 @@
 				<iframe id="f-radar" src="radar_chart.html"></iframe>
 			</div>
 			<div class="panel bar">
-				<span class="panel-title">Adolescent Education — Poorest vs Richest</span>
+				<span class="panel-title">Continued Breastfeeding — Poorest vs Richest</span>
 				<iframe id="f-bar"   src="facetedbar.html"></iframe>
 			</div>
 		</div>
@@ -172,10 +178,12 @@
 		<ul>
 			<li>
 				<b>Select countries.</b> Click a country on the map to pin it; click again to
-				un-pin. Up to two countries can be compared at once — the first appears in
-				<span class="swatch" style="background:#ff9800;"></span><b>orange</b>
-				and the second in
-				<span class="swatch" style="background:#3f51b5;"></span><b>indigo</b>.
+				un-pin. Up to three countries can be compared at once — the first appears in
+				<span class="swatch" style="background:#ff9800;"></span><b>orange</b>,
+				the second in
+				<span class="swatch" style="background:#3f51b5;"></span><b>indigo</b>,
+				and the third in
+				<span class="swatch" style="background:#800080;"></span><b>purple</b>.
 				This colour convention is shared across the map, radar and bar chart.
 			</li>
 			<li>
@@ -183,11 +191,9 @@
 				selected — hovering still shows their tooltip (marked "No breastfeeding data").
 			</li>
 			<li>
-				<b>Population overlay.</b> Use <i>Population metric</i> to switch between
-				under-5 population, total population, or the "not-continuing BF" deficit.
-				Use <i>Display style</i> to render it as a pictogram, bubble, or hide it
-				entirely. For pictograms, <i>Icon unit</i> controls how many people each
-				figure represents.
+				<b>Population overlay.</b> Use <i>Display style</i> to render under-5
+				population as a pictogram, bubble, or hide it entirely. For pictograms,
+				<i>Icon unit</i> controls how many people each figure represents.
 			</li>
 			<li>
 				<b>Linked views.</b> Some text here
