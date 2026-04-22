@@ -215,9 +215,9 @@
 		</fieldset>
 		<fieldset>
 			<legend>Display style</legend>
-			<label><input type="radio" name="style" value="pictogram" checked> Pictogram</label>
+			<label><input type="radio" name="style" value="pictogram"> Pictogram</label>
 			<label><input type="radio" name="style" value="bubble"> Bubble</label>
-			<label><input type="radio" name="style" value="none"> None</label>
+			<label><input type="radio" name="style" value="none" checked> None</label>
 		</fieldset>
 		<fieldset id="unit-fs">
 			<legend>Icon unit (people per figure)</legend>
@@ -258,9 +258,9 @@
 
 			// state
 			const ICON_CAP     = 5500;
-			const MAX_SELECTED = 2;   // up to two countries can be pinned for comparison
+			const MAX_SELECTED = 3;   // up to two countries can be pinned for comparison
 			let currentSize    = "pop_u5";
-			let currentStyle   = "pictogram";
+			let currentStyle   = "none";
 			let iconUnit       = 200000;
 			let selectedWA     = [];  // world-atlas names (used for styling); broadcast translates to CSV names
 			let skipTransition = false;

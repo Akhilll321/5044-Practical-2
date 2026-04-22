@@ -64,8 +64,9 @@
      <div id="empty" class="empty">Click one or two countries on the map to see its Poorest-vs-Richest comparison.</div>
 
     <div id="div1" style="display:none;">
-      <svg id="svg1" width="270" height="220"></svg>
-      <svg id="svg2" width="270" height="220"></svg>
+      <svg id="svg1" width="120" height="220"></svg>
+      <svg id="svg2" width="120" height="220"></svg>
+      <svg id="svg3" width="120" height="220"></svg>  
     
     </div>
 
@@ -84,8 +85,10 @@
         });
      
 
-        w = 220;
-        h = 190;
+        //w = 220;
+        //h = 190;
+        w=140;
+        h=190;
 
         var groups = ["Poorest 20%", "Richest 20%"];
         
@@ -127,6 +130,23 @@
           .call(d3.axisBottom(cat));
         secondchart.append("g").call(d3.axisLeft(num));
 
+        var svgthree = d3.select("#svg3");
+var thirdchart = svgthree.append("g");
+
+thirdchart
+  .append("text")
+  .attr("class", "cname")
+  .attr("text-anchor", "middle")
+  .attr("x", w / 2)
+  .attr("y", -4);
+
+thirdchart
+  .append("g")
+  .attr("transform", `translate(0, ${h})`)
+  .call(d3.axisBottom(cat));
+thirdchart.append("g").call(d3.axisLeft(num));
+
+
      
         function updategraph(name, chart, col) {
           var field = myData.filter(function (d) {
@@ -160,8 +180,15 @@
             .join("rect")
             .attr("class", "bar")
             .transition()
-            .attr("fill", col === 0 ? "#ff9800" : "#3f51b5")
-            .attr("stroke", col === 0 ? "#ff9800" : "#3f51b5")
+            .attr("fill", function() {  
+            if (col === 0) return "#ff9800";
+            else if (col === 1) return "#3f51b5";
+            else return "#9c27b0"; 
+            })
+            .attr("stroke", function() {if (col === 0) return "#ff9800";
+            else if (col === 1) return "#3f51b5";
+            else return "#9c27b0"; 
+            })
             .attr("fill-opacity", 0.3)
             .attr("stroke-opacity", 1.0)
             .attr("stroke-width", 2)
@@ -208,9 +235,12 @@
 
           if (names[0]) updategraph(names[0], firstchart,  0); else clearChart(firstchart);
           if (names[1]) updategraph(names[1], secondchart, 1); else clearChart(secondchart);
+          if (names[2]) updategraph(names[2], thirdchart, 2); else clearChart(thirdchart);
+          
 
           // Hide svg2 entirely when only one country is selected
           d3.select("#svg2").style("display", names[1] ? null : "none");
+          d3.select("#svg3").style("display", names[2] ? null : "none");
         }
 
         // Listen for the cross-iframe sync event relayed by index.html.
