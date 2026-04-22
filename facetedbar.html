@@ -6,56 +6,68 @@
     <title>Breastfeeding rates among richest and poorest 20%</title>
 
     <style>
-      body,
-      html {
-        margin-top:20px;
-        flex-direction:column;
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        box-sizing: border-box;
+        font-family: -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
       }
       h2 {
+        margin: 14px 12px 4px 12px;
         font-size: 16px;
-        text-align:center;
-        font-weight:bold;
-        
-      }
-      #div1 {
-       display:flex;
-       margin-top:30px;
-       margin-left:10px;
+        text-align: center;
+        font-weight: bold;
       }
 
-      svg {
-        overflow:visible;
-        padding-left: 32px;
-        padding-top: 23px;
-        padding-right: 55px;
-       
+      /* Share the body font across every SVG text element */
+      svg text,
+      svg text tspan {
+        font-family: -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
       }
-      
-      #svg1 {fill:#ff9800; 
-        
+
+      /* Flex row of SVGs, each shares the width and scales via viewBox */
+      #div1 {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        gap: 6px;
+        padding: 6px 12px 10px 12px;
+        box-sizing: border-box;
       }
-      #svg2 { fill:#3f51b5;
-       }
-      #svg3 { fill:#800080;
-       }
-      
-      
-      .cname        {
-         font-size: 19px;
-         font-weight: bold; }
+      #div1 svg {
+        flex: 1;
+        min-width: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        overflow: visible;
+      }
+
+      #svg1 { fill: #ff9800; }
+      #svg2 { fill: #3f51b5; }
+      #svg3 { fill: #800080; }
+
+      .cname {
+        font-size: 19px;
+        font-weight: bold;
+      }
 
       .nodata-note {
         font-size: 10px;
         fill: #999;
         font-style: italic;
-        text-align: center;
       }
 
       .empty {
         color: #999;
         font-size: 12px;
         text-align: center;
-        margin-top: 80px;
+        margin-top: 60px;
       }
     </style>
   </head>
@@ -63,13 +75,12 @@
   <body>
     <h2>Comparison of Continued Breastfeeding Rates Between the Richest and Poorest 20% by Country</h2>
 
-     <div id="empty" class="empty">Click one or two countries on the map to see its Poorest-vs-Richest comparison.</div>
+     <div id="empty" class="empty">Click up to three countries on the map to see its Poorest-vs-Richest comparison.</div>
 
     <div id="div1" style="display:none;">
-      <svg id="svg1" width="120" height="220"></svg>
-      <svg id="svg2" width="120" height="220"></svg>
-      <svg id="svg3" width="120" height="220"></svg>  
-    
+      <svg id="svg1" viewBox="-40 -30 200 260" preserveAspectRatio="xMidYMid meet"></svg>
+      <svg id="svg2" viewBox="-40 -30 200 260" preserveAspectRatio="xMidYMid meet"></svg>
+      <svg id="svg3" viewBox="-40 -30 200 260" preserveAspectRatio="xMidYMid meet"></svg>
     </div>
 
 
@@ -77,79 +88,47 @@
       var dataPath = "data/final_new3.csv";
 
       d3.csv(dataPath).then(function (myData) {
-        // Data cleaning
+        // Parse the richest/poorest columns; "-" becomes 0 (treated as missing)
         myData.forEach((element) => {
           let poorest = element["Poorest 20%"];
           let richest = element["Richest 20%"];
           element["Poorest 20%"] = poorest === "-" ? 0 : parseInt(poorest);
           element["Richest 20%"] = richest === "-" ? 0 : parseInt(richest);
-
         });
-     
 
-        //w = 220;
-        //h = 190;
-        w=140;
-        h=190;
+        var w = 140;
+        var h = 190;
+
+        // Tunable bar thickness — raise for chunkier bars, lower for thinner
+        var BAR_MAX_W = 40;
 
         var groups = ["Poorest 20%", "Richest 20%"];
-        
         var cat = d3.scaleBand().domain(groups).range([0, w]).padding([0.2]);
         var num = d3.scaleLinear().domain([0, 100]).range([h, 0]);
 
-        // Chart 1
+        // Clamp each bar's width and centre it inside its band
+        var barW = () => Math.min(cat.bandwidth(), BAR_MAX_W);
+        var barX = d  => cat(d.group) + (cat.bandwidth() - barW()) / 2;
 
-        var svgone = d3.select("#svg1");
-        var firstchart = svgone.append("g");
+        // Per-chart setup: title slot above, two axes below
+        function buildChart(svgSel) {
+          var chart = svgSel.append("g");
+          chart.append("text")
+            .attr("class", "cname")
+            .attr("text-anchor", "middle")
+            .attr("x", w / 2)
+            .attr("y", -4);
+          chart.append("g")
+            .attr("transform", `translate(0, ${h})`)
+            .call(d3.axisBottom(cat));
+          chart.append("g").call(d3.axisLeft(num));
+          return chart;
+        }
 
-        firstchart
-          .append("text")
-          .attr("class", "cname")
-          .attr("text-anchor", "middle")
-          .attr("x", w / 2)
-          .attr("y",-4);
+        var firstchart  = buildChart(d3.select("#svg1"));
+        var secondchart = buildChart(d3.select("#svg2"));
+        var thirdchart  = buildChart(d3.select("#svg3"));
 
-        firstchart
-          .append("g")
-          .attr("transform", `translate(0, ${h})`)
-          .call(d3.axisBottom(cat));
-        firstchart.append("g").call(d3.axisLeft(num));
-
-        // Chart 2
-        var svgtwo = d3.select("#svg2");
-        var secondchart = svgtwo.append("g");
-
-        secondchart
-          .append("text")
-          .attr("class", "cname")
-          .attr("text-anchor", "middle")
-          .attr("x", w / 2)
-          .attr("y", -4);
-
-        secondchart
-          .append("g")
-          .attr("transform", `translate(0, ${h})`)
-          .call(d3.axisBottom(cat));
-        secondchart.append("g").call(d3.axisLeft(num));
-
-        var svgthree = d3.select("#svg3");
-var thirdchart = svgthree.append("g");
-
-thirdchart
-  .append("text")
-  .attr("class", "cname")
-  .attr("text-anchor", "middle")
-  .attr("x", w / 2)
-  .attr("y", -4);
-
-thirdchart
-  .append("g")
-  .attr("transform", `translate(0, ${h})`)
-  .call(d3.axisBottom(cat));
-thirdchart.append("g").call(d3.axisLeft(num));
-
-
-     
         function updategraph(name, chart, col) {
           var field = myData.filter(function (d) {
             return d.Country == name;
@@ -159,67 +138,74 @@ thirdchart.append("g").call(d3.axisLeft(num));
 
           chart.select(".cname").text(countrylist.Country);
           chart.selectAll(".nodata-note").remove();
-          chart.selectAll(".bar").remove();
-          chart.selectAll(".perctext").remove();
           if (countrylist["Poorest 20%"] == 0 && countrylist["Richest 20%"] == 0) {
-            chart.append("text")
+            var note = chart.append("text")
               .attr("class", "nodata-note")
-              .attr("x", w / 2+20).attr("y", h / 2)
-              .attr("text-anchor", "middle")
-              .text("No data available");
+              .attr("x", w / 2)
+              .attr("y", h / 2 - 10)
+              .attr("text-anchor", "middle");
+            note.append("tspan").attr("x", w / 2).text("No data for the");
+            note.append("tspan").attr("x", w / 2).attr("dy", "1.2em").text("richest & poorest 20%");
+            note.append("tspan").attr("x", w / 2).attr("dy", "1.2em").text("in this country");
           }
-          let poorest = countrylist["Poorest 20%"];
-          let richest = countrylist["Richest 20%"];
+
           var results = [
-          { group: "Poorest 20%", c: poorest },
-          { group: "Richest 20%", c: richest }
+            { group: "Poorest 20%", c: countrylist["Poorest 20%"] },
+            { group: "Richest 20%", c: countrylist["Richest 20%"] }
           ];
-          chart.selectAll(".perctext").remove();
 
-          chart
-            .selectAll(".bar")
-            .data(results)
-            .join("rect")
-            .attr("class", "bar")
-            .transition()
-            .attr("fill", function() {  
-            if (col === 0) return "#ff9800";
-            else if (col === 1) return "#3f51b5";
-            else return "#800080"; 
-            })
-            .attr("stroke", function() {if (col === 0) return "#ff9800";
-            else if (col === 1) return "#3f51b5";
-            else return "#800080"; 
-            })
-            .attr("fill-opacity", 0.3)
-            .attr("stroke-opacity", 1.0)
-            .attr("stroke-width", 2)
-            .duration(535)
-            .attr("x",function(z){return cat(z.group)})
-            .attr("y",function (z) {
-              return z.c == 0 ? h : num(z.c);
-            })
-            .attr("width", cat.bandwidth())
-            .attr("height",function (z) {
-              return z.c == 0 ? 0 : num(0) - num(z.c);
-            })
+          var fillColor = col === 0 ? "#ff9800"
+                        : col === 1 ? "#3f51b5"
+                        :              "#800080";
 
-            chart.selectAll(".perctext")
-            
+          // Bars grow upward from the baseline on enter
+          chart.selectAll(".bar")
             .data(results)
-            .join("text")
-            .attr("class","perctext")
+            .join(
+              enter => enter.append("rect")
+                .attr("class", "bar")
+                .attr("x", barX)
+                .attr("y", h)
+                .attr("width", barW())
+                .attr("height", 0)
+                .attr("fill-opacity", 0.3)
+                .attr("stroke-opacity", 1.0)
+                .attr("stroke-width", 2),
+              update => update,
+              exit => exit.remove()
+            )
+            .attr("fill",   fillColor)
+            .attr("stroke", fillColor)
             .transition()
             .duration(535)
-            .text(z =>z.c+"%")
-            .attr("x", z=> cat(z.group) + cat.bandwidth()/2)
-            .attr("y", z => (z.c == 0 ? num(0) : num(z.c)) + 15)
-            .attr("text-anchor", "middle")
-            .style("font-family", "sans-serif")
-            .style("font-size", 14)
-            .style("fill", "black")
-            .style("font-weight", "bold  ");
+            .attr("x",      barX)
+            .attr("y",      z => z.c == 0 ? h : num(z.c))
+            .attr("width",  barW())
+            .attr("height", z => z.c == 0 ? 0 : num(0) - num(z.c));
 
+          // Percent labels — skip missing values 
+          var labelData = results.filter(z => z.c > 0);
+          chart.selectAll(".perctext")
+            .data(labelData, z => z.group)
+            .join(
+              enter => enter.append("text")
+                .attr("class", "perctext")
+                .attr("x", z => cat(z.group) + cat.bandwidth() / 2)
+                .attr("y", h)
+                .attr("text-anchor", "middle")
+                .style("font-size", 14)
+                .style("fill", "black")
+                .style("font-weight", "bold")
+                .style("opacity", 0),
+              update => update,
+              exit => exit.remove()
+            )
+            .text(z => z.c + "%")
+            .transition()
+            .duration(535)
+            .attr("x", z => cat(z.group) + cat.bandwidth() / 2)
+            .attr("y", z => num(z.c) + 15)
+            .style("opacity", 1);
         }
 
 
@@ -229,7 +215,7 @@ thirdchart.append("g").call(d3.axisLeft(num));
           chart.selectAll(".perctext").remove();
         }
 
-        // Redraw both charts whenever the map selection changes
+        // Redraw all three charts whenever the map selection changes
         function redraw(names) {
           var hasAny = names && names.length > 0;
           d3.select("#empty").style("display", hasAny ? "none" : null);
@@ -237,21 +223,18 @@ thirdchart.append("g").call(d3.axisLeft(num));
 
           if (names[0]) updategraph(names[0], firstchart,  0); else clearChart(firstchart);
           if (names[1]) updategraph(names[1], secondchart, 1); else clearChart(secondchart);
-          if (names[2]) updategraph(names[2], thirdchart, 2); else clearChart(thirdchart);
-          
+          if (names[2]) updategraph(names[2], thirdchart,  2); else clearChart(thirdchart);
 
-          // Hide svg2 entirely when only one country is selected
+          // Hide unused panels when fewer than three countries are selected
           d3.select("#svg2").style("display", names[1] ? null : "none");
           d3.select("#svg3").style("display", names[2] ? null : "none");
         }
 
-        // Listen for the cross-iframe sync event relayed by index.html.
+        // Selection sync relayed by index.html
         window.addEventListener("syncCountries", function (e) {
           var names = (e.detail && e.detail.names) || [];
           redraw(names);
         });
-        
-
       });
     </script>
   </body>
