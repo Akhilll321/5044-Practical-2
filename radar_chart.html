@@ -47,8 +47,8 @@
                             "gdp_percentile", "female_upper_secondary_education_%", 
                             "female_labour_force_participation_%"];
             
-            let featureLabels = ["Antenatal Care", "Continued BF(%)", "GDP Percentile", 
-                                "Female Education", "Female Labour"];
+            let featureLabels = ["Antenatal Care (%)", "Continued BF(%)", "GDP Percentile", 
+                                "Female Education (%)", "Female Labour (%)"];
 
 
             // Responsive svg view
@@ -81,13 +81,13 @@
             // Add tick labels
             svg.selectAll(".ticklabel")
                 .data(ticks)
-                .join(
-                    enter => enter.append("text")
-                        .attr("class", "ticklabel")
-                        .attr("x", width / 2 + 5)
-                        .attr("y", d => height / 2 - radialScale(d))
-                        .text(d => (d * 10) + "%")
-                );
+                .join("text")
+                .attr("class", "ticklabel")
+                .attr("x", width / 2 + 5)
+                .attr("y", d => height / 2 - radialScale(d))
+                .style("font-size", "22px")
+                .text(d => (d * 10) + "%");
+           
             
             // Function to convert angle to coordinate
             function angleToCoordinate(angle, value) {
